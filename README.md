@@ -11,10 +11,10 @@ Sep 28-30 2026, Manhattan, KS
 
 ## Contents
 
-- `EpidemWrkShopTalk.qmd`: the main file to produce the revealjs slides
+- `index.qmd`: the main file to produce the revealjs slides
 - `quantify_instability.qmd`: code for fitting simple logistic
   regression models using the simulated data and producing instability
   plots and summary statistics
 - `data_simulation.qmd`: simulate the datasets to be used with the
   project
-- `styles.scss`: style definitions used in `EpidemWrkShopTalk.qmd`
+- `styles.scss`: style definitions used in `index.qmd`
