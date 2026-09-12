@@ -1,0 +1,204 @@
+---
+title: "Bootstrap Simulations"
+format: html
+editor: visual
+editor_options: 
+  chunk_output_type: console
+---
+
+## Introduction
+
+Simulate a toy dataset with a *specified* signal-to-noise ratio (SNR), allowing the predictors $x_1$ and $x_2$ to contribute UNEQUALLY to the signal.
+
+Definition used here (Hastie, Tibshirani & Friedman, ESL Sec. 16.2.2, adapted to a Bernoulli outcome):
+
+$SNR = Var( \eta(X) ) / E[ Var(Y | \eta(X)) ]$
+
+where $eta(X) = \beta_0 + \beta_1*x_1 + \beta_2*x_2$ is the linear predictor (log-odds), $Var(\eta(X))$ is the variance of the log-odds across the population ("signal"), and $E[Var(Y|\eta(X))] = E[p (1-p)]$ is the average Bernoulli variance implied by the model ("noise").
+
+A LARGER SNR means $x_1$ and/or $x_2$ explain more of the variation in $y$ relative to irreducible Bernoulli randomness, which also pushes the c-statistic (AUC) higher. The two are linked but not identical, so we calibrate on SNR directly and report the resulting AUC as a by-product.
+
+Instead of forcing the coefs of $x_1$ and $x_2$ to $\beta_1 = \beta_2$ (equal contribution), we fix a *relative contribution ratio* between $x_1$ and $x_2$, then solve for an overall scale factor that hits the target SNR while preserving that ratio.
+
+```{r}
+#| label: init-setup
+
+library(pROC)
+library(DBI)
+library(duckdb)
+
+set.seed(2026)
+n <- 200000
+prevalence <- 0.20     # target proportion of events for y
+```
+
+## Step-by-step procedure
+
+```{r}
+#| label: Step-by-step-procedure
+
+## Step 1: Simulate the predictor variables
+
+x1 <- rnorm(n, mean = 0, sd = 1)   # causal predictor 1
+x2 <- rnorm(n, mean = 0, sd = 1)   # causal predictor 2
+x3 <- rnorm(n, mean = 0, sd = 1)   # noise variable, unrelated to y, x1, x2
+
+
+## Step 2: Specify how much MORE x1 should contribute than x2
+# ratio = 1   -> x1 and x2 contribute equally
+# ratio = 2   -> x1's coefficient is twice x2's, so x1 contributes 4x the
+#                *variance* of x2 (since variance scales with beta^2),
+#                i.e. x1 supplies 80% of the total signal variance and
+#                x2 supplies 20%.
+# ratio < 1   -> x2 dominates instead of x1.
+contribution_ratio <- 2.0   # beta1 / beta2; edit this to change the split
+
+## Step 3: Function to compute achieved SNR for a given overall "scale", holding the beta1:beta2 ratio fixed at contribution_ratio
+
+# beta1 = contribution_ratio * scale
+# beta2 = scale
+# Scaling both coefficients together by "scale" changes the overall signal strength (and hence SNR) without changing the relative split between x1 and x2.
+get_snr_unequal <- function(scale, ratio, x1, x2, prevalence) {
+
+  beta1 <- ratio * scale
+  beta2 <- scale
+  lp_signal <- beta1 * x1 + beta2 * x2
+  
+  # Inner function: for a candidate intercept b0, compute how far the
+  # implied average probability is from the target prevalence.
+  prevalence_gap <- function(b0) {
+    eta <- b0 + lp_signal
+    p   <- 1 / (1 + exp(-eta))
+    mean(p) - prevalence
+  }
+  
+  # Solve for the intercept b0 that makes the average predicted
+  # probability equal to the target prevalence (root-finding).
+  b0 <- uniroot(prevalence_gap, lower = -10, upper = 10)$root
+
+  eta <- b0 + lp_signal
+  p   <- 1 / (1 + exp(-eta))
+
+  var_signal <- var(eta)            # variance of the log-odds (signal)
+  var_noise  <- mean(p * (1 - p))   # average Bernoulli variance (noise)
+
+  list(snr = var_signal / var_noise, beta0 = b0, beta1 = beta1, beta2 = beta2,
+       eta = eta, p = p)
+}
+
+
+## Step 4: Solve for the "scale" that achieves the target SNR, given the fixed contribution_ratio between beta1 and beta2
+
+# Change target_snr to whatever value you want to simulate.
+# As a rough guide (derived from this same predictor setup):
+#   SNR ~ 1   -> weak signal,     AUC ~ 0.60
+#   SNR ~ 4   -> low-moderate,    AUC ~ 0.69
+#   SNR ~ 8   -> moderate signal, AUC ~ 0.75
+#   SNR ~ 16  -> strong signal,   AUC ~ 0.81
+target_snr <- 8   # moderate signal
+
+snr_gap <- function(scale) {
+  get_snr_unequal(scale, contribution_ratio, x1, x2, prevalence)$snr - target_snr
+}
+
+scale_solution <- uniroot(snr_gap, lower = 0.001, upper = 5)$root
+
+# Recompute the final quantities at the solved scale
+result <- get_snr_unequal(scale_solution, contribution_ratio, x1, x2, prevalence)
+beta0 <- result$beta0
+beta1 <- result$beta1
+beta2 <- result$beta2
+eta   <- result$eta
+p_y   <- result$p
+
+cat("Solved beta1 (x1 coefficient):", round(beta1, 4), "\n")
+cat("Solved beta2 (x2 coefficient):", round(beta2, 4), "\n")
+cat("Solved intercept (beta0):", round(beta0, 4), "\n")
+cat("Achieved SNR:", round(result$snr, 3), "(target was", target_snr, ")\n")
+
+# Report how the total signal variance splits between x1 and x2 -
+# this is the practical, interpretable readout of "who contributes more."
+var_x1_contribution <- var(beta1 * x1)
+var_x2_contribution <- var(beta2 * x2)
+total_contribution  <- var_x1_contribution + var_x2_contribution
+cat("Share of signal variance from x1:",
+    round(var_x1_contribution / total_contribution, 3), "\n")
+cat("Share of signal variance from x2:",
+    round(var_x2_contribution / total_contribution, 3), "\n")
+
+
+## Step 5: Draw y, assemble the dataset
+
+y <- rbinom(n, size = 1, prob = p_y)
+cat("Empirical event rate:", round(mean(y), 3), "\n")
+
+sim_data <- data.frame(y = y, x1 = x1, x2 = x2, x3 = x3)
+
+
+## Step 6: Fit the logistic model and confirm x1's larger coefficient
+## shows up as a larger effect size, plus check overall AUC
+
+fit <- glm(y ~ x1 + x2, data = sim_data, family = binomial())
+summary(fit)   # beta1 estimate should be roughly contribution_ratio times beta2
+
+pred_probs <- predict(fit, type = "response")
+roc_obj <- roc(sim_data$y, pred_probs, quiet = TRUE)
+cat("C-statistic (AUC):", round(auc(roc_obj), 3), "\n")
+
+
+## Step 7 (sanity check): x3 remains pure noise, unaffected by the SNR
+## setting on x1/x2, since it never enters the data-generating process
+noise_check <- glm(y ~ x3, data = sim_data, family = binomial())
+summary(noise_check)
+```
+
+## Reusable function version
+
+```{r}
+## Parameterized by target SNR AND the relative contribution ratio between x1 and x2
+
+simulate_snr_dataset_unequal <- function(target_snr, ratio = 1, n = 200000,
+                                          prevalence = 0.2, seed = NULL) {
+  if (!is.null(seed)) set.seed(seed)
+
+  x1 <- rnorm(n)
+  x2 <- rnorm(n)
+  x3 <- rnorm(n)
+
+  snr_gap <- function(scale) get_snr_unequal(scale, ratio, x1, x2, prevalence)$snr - target_snr
+  scale_sol <- uniroot(snr_gap, lower = 0.001, upper = 5)$root
+  res <- get_snr_unequal(scale_sol, ratio, x1, x2, prevalence)
+
+  y <- rbinom(n, size = 1, prob = res$p)
+
+  data.frame(y = y, x1 = x1, x2 = x2, x3 = x3,
+             beta1 = res$beta1, beta2 = res$beta2)  # coefficients attached for reference
+}
+```
+
+## Example datasets
+
+```{r}
+# Example: moderate SNR (8), x1 twice as influential as x2
+dat_unequal <- simulate_snr_dataset_unequal(target_snr = 8, ratio = 2, seed = 1)
+
+# Example: moderate SNR (8), equal contribution (ratio = 1)
+dat_equal <- simulate_snr_dataset_unequal(target_snr = 8, ratio = 1, seed = 1)
+```
+
+## Saving the datasets
+
+```{r}
+# calculations.qmd
+con <- dbConnect(duckdb(), dbdir = "data/sim_data.duckdb")
+
+dbWriteTable(con, "dat_unequal", dat_unequal, overwrite = TRUE)
+
+dbWriteTable(con, "dat_equal", dat_equal, overwrite = TRUE)
+
+# A check that the tables are in the DB:
+dbListTables(con)
+
+# Disconnect:
+dbDisconnect(con, shutdown = TRUE)
+```

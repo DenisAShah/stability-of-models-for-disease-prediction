@@ -1,0 +1,942 @@
+---
+title: "stability quantification"
+format: html
+editor: visual
+editor_options: 
+  chunk_output_type: console
+---
+
+<!-- Set up -->
+
+```{r}
+#|label: libraries
+library(DBI)
+library(duckdb)
+
+library(pminternal)
+library(ggplot2)
+library(ggtext)   # needed for element_markdown(): mixed-size, multi-line axis titles
+library(dplyr)
+library(tibble)
+library(tidyr)
+library(rsample)
+```
+
+<!-- The simulated dataset is saved in a duckDB database -->
+
+```{r}
+#|label: load-data
+con <- dbConnect(duckdb(), dbdir = "data/sim_data.duckdb", read_only = TRUE)
+x <- tbl(con, "dat_unequal") |> collect()
+dbDisconnect(con, shutdown = TRUE)
+rm(con)
+```
+
+<!-- Create the 100 obs and 500 obs datasets that will be used to illustrate instability -->
+
+```{r}
+#| label: development-dataset-100
+set.seed(514)
+split <- initial_split(x, prop = 101/nrow(x), strata = y)
+dat_100 <- training(split)
+rm(split)
+
+# Some checks:
+nrow(dat_100)                    # should be 100
+prop.table(table(x$y))           # original class balance
+prop.table(table(dat_100$y))     # sampled class balance
+```
+
+```{r}
+#| label: development-dataset-500
+
+set.seed(414)
+split <- initial_split(x, prop = 501/nrow(x), strata = y)
+dat_500 <- training(split)
+rm(split)
+
+# Some checks:
+nrow(dat_500)                    # should be 500
+prop.table(table(x$y))           # original class balance
+prop.table(table(dat_500$y))     # sampled class balance
+```
+
+<!-- prediction instability functions -->
+
+```{r}
+#|label: prediction-instability-define-functions
+# NOTE: warnings are more likely to occur with small n, for example: 1: Iteration limit reached without full convergence - check carefully (3 occurrences).  
+# So, you may have problems with no. events due to the imbalance and small sample size.
+# Create a wrapper which does some error checking.
+
+# pminternal::validate() already has some built-in resilience baked in—per its documentation, if the internal model_fun throws an error, or if a bootstrap resample has constant outcomes (e.g., all(y == 0), it returns NA for that resample and excludes it from the optimism calculation, rather than crashing the whole call. But that's silent by default, and it doesn't tell you how many of your requested B resamples actually succeeded, nor does it suppress the flood of glm.fit separation warnings that will print to console during a B-iteration bootstrap. Here's a wrapper that catches outer errors, collects and counts warnings without letting them spam, and reports the effective sample size afterward.
+safe_validate <- function(fit, method = "boot_optimism", B = 200, seed = NULL, ...) {
+  if (!is.null(seed)) set.seed(seed)
+  
+  warning_log <- character(0)
+  
+  result <- withCallingHandlers(
+    tryCatch({
+      pminternal::validate(fit = fit, method = method, B = B, ...)
+    }, error = function(e) {
+      message("validate() failed with error: ", conditionMessage(e))
+      NULL
+    }),
+    warning = function(w) {
+      warning_log[[length(warning_log) + 1]] <<- conditionMessage(w)
+      invokeRestart("muffleWarning")  # suppress console spam, keep a record
+    }
+  )
+  
+  n_warnings <- length(warning_log)
+  separation_flags <- sum(grepl("separat|fitted probabilities|did not converge", 
+                                warning_log, ignore.case = TRUE))
+  
+  list(
+    result       = result,
+    n_warnings   = n_warnings,
+    separation_warnings = separation_flags,
+    warning_log  = warning_log
+  )
+}
+```
+
+# Prediction Instability Plot
+
+(presentation-quality version)
+
+Based on Riley & Collins (2023, Biometrical Journal) and implemented via the `pminternal` package.
+
+## development data = 100 obs
+
+```{r}
+#| label: development-data-100
+
+# Logistic regression, all 3 predictors forced in, no interaction
+mod_100 <- glm(y ~ x1 + x2 + x3, data = dat_100, family = binomial())
+
+# The model-fitted probs:
+orig_pred_100 <- predict(mod_100, type = "response")
+
+# GENERATE BOOTSTRAP INSTABILITY DATA via pminternal
+#    B >= 200 per Riley & Collins recommendation.
+val_100 <- safe_validate(fit = mod_100, method = "boot_optimism", B = 200, seed = 123)
+
+# Some checks:
+val_100$result               # the internal_validate object, or NULL if it failed outright
+val_100$n_warnings           # total warnings raised across all B resamples
+val_100$separation_warnings  # how many looked like separation/convergence issues
+
+
+# pminternal's own convenience function builds the instability plot
+# and, importantly, returns the underlying data used to build it.
+# We extract that data frame rather than re-deriving predictions by hand.
+stability_mat <- pminternal::prediction_stability(val_100$result, smooth_bounds = FALSE, plot = FALSE)
+
+# Convert N x (B + 1) matrix to long data for ggplot.
+# Each row is one individual's prediction from one bootstrap model.
+plot_data <- as.data.frame(stability_mat) |>
+  dplyr::rename(orig_pred = 1) |>
+  dplyr::mutate(id = row_number(), .before = orig_pred) |>
+  tidyr::pivot_longer(
+    cols = -c(id, orig_pred),
+    names_to = "bootstrap_replicate",
+    values_to = "boot_pred"
+  )
+
+# Optional check: with N = 100 and B = 200, this should be 20,000 rows.
+dim(plot_data)
+
+# Create a 95% bootstrap stability range for each original individual
+stability_bounds <-
+  plot_data |>
+  dplyr::group_by(id, orig_pred) |>
+  dplyr::summarise(
+    lower_95 = quantile(boot_pred, probs = 0.025, na.rm = TRUE),
+    upper_95 = quantile(boot_pred, probs = 0.975, na.rm = TRUE),
+    .groups = "drop"
+  ) |>
+  dplyr::arrange(orig_pred)
+
+# Smooth the two percentile boundaries separately over original risk.
+# Try span values between 0.2 and 0.8 if you want more/less smoothing.
+loess_span <- 0.5
+
+lower_loess <- loess(
+  lower_95 ~ orig_pred,
+  data = stability_bounds,
+  span = loess_span,
+  degree = 1
+)
+
+upper_loess <- loess(
+  upper_95 ~ orig_pred,
+  data = stability_bounds,
+  span = loess_span,
+  degree = 1
+)
+
+# Predict on a regular x grid so that the ribbon is visually smooth.
+ribbon_data <- tibble::tibble(
+  orig_pred = seq(0, 1, length.out = 500)
+) |>
+  dplyr::mutate(
+    lower_95 = predict(lower_loess, newdata = tibble::tibble(orig_pred = orig_pred)),
+    upper_95 = predict(upper_loess, newdata = tibble::tibble(orig_pred = orig_pred)),
+    # Keep numerical LOESS overshoot within the probability scale.
+    lower_95 = pmax(0, pmin(1, lower_95)),
+    upper_95 = pmax(0, pmin(1, upper_95))
+  ) |>
+  dplyr::filter(!is.na(lower_95), !is.na(upper_95))
+
+
+# BUILD A PRESENTATION-QUALITY GGPLOT INSTABILITY PLOT
+instability_plot_100 <- 
+  ggplot(plot_data, aes(x = orig_pred, y = boot_pred)) +
+  geom_ribbon(
+    data = ribbon_data,
+    aes(
+      x = orig_pred,
+      ymin = lower_95,
+      ymax = upper_95
+    ),
+    inherit.aes = FALSE,
+    fill = "#1F78B4",
+    alpha = 0.16
+  ) +
+  geom_line(
+    data = ribbon_data,
+    aes(x = orig_pred, y = lower_95),
+    inherit.aes = FALSE,
+    color = "#08519C",
+    linewidth = 0.8
+  ) +
+  geom_line(
+    data = ribbon_data,
+    aes(x = orig_pred, y = upper_95),
+    inherit.aes = FALSE,
+    color = "#08519C",
+    linewidth = 0.8
+  ) +
+  geom_point(
+    color = "#1F78B4",
+    alpha = 0.055,
+    size = 1.15
+  ) +
+  geom_abline(
+    slope = 1,
+    intercept = 0,
+    color = "#D73027",
+    linetype = "solid",
+    linewidth = 0.9
+  ) +
+  annotate(
+    geom = "label",
+    x = 0.72,
+    y = 0.64,
+    label = "Perfect agreement",
+    text.color = "#D73027",
+    border.color = "#D73027",
+    fill = "white",
+    fontface = "bold",
+    size = 4
+  ) +
+  annotate(
+    geom = "label",
+    x = 0.015,
+    y = 0.90,
+    label = "Smoothed 95% stability interval",
+    text.color = "#08519C",
+    border.color = "#08519C",
+    fill = "white",
+    fontface = "bold",
+    size = 2.5,
+    hjust = 0
+  ) +
+  coord_equal(xlim = c(0, 1), ylim = c(0, 1), expand = FALSE) +
+  scale_x_continuous(breaks = seq(0, 1, 0.2)) +
+  scale_y_continuous(breaks = seq(0, 1, 0.2)) +
+  labs(
+    x = "Estimated risk from development model",
+    y = "Estimated risk from bootstrapped models"
+  ) +
+  theme_minimal(base_size = 15) +
+  theme(
+    panel.grid.minor = element_blank(),
+    panel.grid.major = element_line(color = "grey88", linewidth = 0.35),
+    axis.title = element_text(face = "bold"),
+    axis.title.x = element_text(margin = margin(t = 10)),
+    axis.title.y = element_text(margin = margin(r = 10)),
+    axis.text = element_text(color = "grey20"),
+    plot.margin = margin(12, 18, 12, 12)
+  )
+
+instability_plot_100
+
+# Save a high-resolution version for slides
+# ggsave(
+#   filename = here::here("images", "prediction_instability_100.png"),
+#   plot     = instability_plot_100,
+#   width    = 6.5, height = 6.5, dpi = 320, bg = "white"
+# )
+```
+
+## development data = 500 obs
+
+```{r}
+# Logistic regression, all 3 predictors forced in, no interaction
+mod_500 <- glm(y ~ x1 + x2 + x3, data = dat_500, family = binomial())
+
+orig_pred_500 <- predict(mod_500, type = "response")
+
+# 2. GENERATE BOOTSTRAP INSTABILITY DATA via pminternal
+#    B >= 200 per Riley & Collins recommendation.
+val_500 <- safe_validate(fit = mod_500, method = "boot_optimism", B = 200, seed = 123)
+
+# Some checks:
+val_500$result               # the internal_validate object, or NULL if it failed outright
+val_500$n_warnings           # total warnings raised across all B resamples
+val_500$separation_warnings  # how many looked like separation/convergence issues
+
+
+# pminternal's own convenience function builds the instability plot
+# and, importantly, returns the underlying data used to build it.
+# We extract that data frame rather than re-deriving predictions by hand.
+stability_mat <- pminternal::prediction_stability(val_500$result, smooth_bounds = FALSE, plot = FALSE)
+
+# Convert N x (B + 1) matrix to long data for ggplot.
+# Each row is one individual's prediction from one bootstrap model.
+plot_data <- as.data.frame(stability_mat) |>
+  dplyr::rename(orig_pred = 1) |>
+  dplyr::mutate(id = row_number(), .before = orig_pred) |>
+  tidyr::pivot_longer(
+    cols = -c(id, orig_pred),
+    names_to = "bootstrap_replicate",
+    values_to = "boot_pred"
+  )
+
+# Optional check: with N = 150 and B = 200, this should be 100,000 rows.
+dim(plot_data)
+
+# Create a 95% bootstrap stability range for each original individual
+stability_bounds <- 
+  plot_data |>
+  dplyr::group_by(id, orig_pred) |>
+  dplyr::summarise(
+    lower_95 = quantile(boot_pred, probs = 0.025, na.rm = TRUE),
+    upper_95 = quantile(boot_pred, probs = 0.975, na.rm = TRUE),
+    .groups = "drop"
+  ) |>
+  dplyr::arrange(orig_pred)
+
+# Smooth the two percentile boundaries separately over original risk.
+# Try span values between 0.2 and 0.8 if you want more/less smoothing.
+loess_span <- 0.5
+
+lower_loess <- loess(
+  lower_95 ~ orig_pred,
+  data = stability_bounds,
+  span = loess_span,
+  degree = 1
+)
+
+upper_loess <- loess(
+  upper_95 ~ orig_pred,
+  data = stability_bounds,
+  span = loess_span,
+  degree = 1
+)
+
+# Predict on a regular x grid so that the ribbon is visually smooth.
+ribbon_data <- tibble::tibble(
+  orig_pred = seq(0, 1, length.out = 500)
+) |>
+  dplyr::mutate(
+    lower_95 = predict(lower_loess, newdata = tibble::tibble(orig_pred = orig_pred)),
+    upper_95 = predict(upper_loess, newdata = tibble::tibble(orig_pred = orig_pred)),
+    # Keep numerical LOESS overshoot within the probability scale.
+    lower_95 = pmax(0, pmin(1, lower_95)),
+    upper_95 = pmax(0, pmin(1, upper_95))
+  ) |>
+  dplyr::filter(!is.na(lower_95), !is.na(upper_95))
+
+
+# Randomly select 200 original individuals for the displayed point cloud.
+# The stability bounds and LOESS ribbon above still use all 500 individuals.
+set.seed(20260824)
+
+ids_to_plot <- 
+  plot_data |>
+  dplyr::distinct(id) |>
+  dplyr::slice_sample(n = 200) |>
+  dplyr::pull(id)
+
+plot_data_points <- 
+  plot_data |>
+  dplyr::filter(id %in% ids_to_plot)
+
+# Optional check:
+plot_data_points |>
+  dplyr::summarise(
+    observations_displayed = n_distinct(id),
+    bootstrap_points = n(),
+    predictions_per_observation = n() / n_distinct(id)
+  )
+
+
+# 3. BUILD A PRESENTATION-QUALITY GGPLOT INSTABILITY PLOT
+instability_plot_500 <- 
+  ggplot(plot_data_points, aes(x = orig_pred, y = boot_pred)) +
+  geom_ribbon(
+    data = ribbon_data,
+    aes(
+      x = orig_pred,
+      ymin = lower_95,
+      ymax = upper_95
+    ),
+    inherit.aes = FALSE,
+    fill = "#1F78B4",
+    alpha = 0.16
+  ) +
+  geom_line(
+    data = ribbon_data,
+    aes(x = orig_pred, y = lower_95),
+    inherit.aes = FALSE,
+    color = "#08519C",
+    linewidth = 0.8
+  ) +
+  geom_line(
+    data = ribbon_data,
+    aes(x = orig_pred, y = upper_95),
+    inherit.aes = FALSE,
+    color = "#08519C",
+    linewidth = 0.8
+  ) +
+  geom_point(
+    color = "#1F78B4",
+    alpha = 0.055,
+    size = 1.15
+  ) +
+  geom_abline(
+    slope = 1,
+    intercept = 0,
+    color = "#D73027",
+    linetype = "solid",
+    linewidth = 0.9
+  ) +
+  annotate(
+    geom = "label",
+    x = 0.72,
+    y = 0.64,
+    label = "Perfect agreement",
+    text.color = "#D73027",
+    border.color = "#D73027",
+    fill = "white",
+    fontface = "bold",
+    size = 4
+  ) +
+  annotate(
+    geom = "label",
+    x = 0.015,
+    y = 0.90,
+    label = "Smoothed 95% stability interval",
+    text.color = "#08519C",
+    border.color = "#08519C",
+    fill = "white",
+    fontface = "bold",
+    size = 2.5,
+    hjust = 0
+  ) +
+  coord_equal(xlim = c(0, 1), ylim = c(0, 1), expand = FALSE) +
+  scale_x_continuous(breaks = seq(0, 1, 0.2)) +
+  scale_y_continuous(breaks = seq(0, 1, 0.2)) +
+  labs(
+    x = "Estimated risk from development model",
+    y = "Estimated risk from bootstrapped models"
+  ) +
+  theme_minimal(base_size = 15) +
+  theme(
+    panel.grid.minor = element_blank(),
+    panel.grid.major = element_line(color = "grey88", linewidth = 0.35),
+    axis.title = element_text(face = "bold"),
+    axis.title.x = element_text(margin = margin(t = 10)),
+    axis.title.y = element_text(margin = margin(r = 10)),
+    axis.text = element_text(color = "grey20"),
+    plot.margin = margin(12, 18, 12, 12)
+  )
+
+instability_plot_500
+
+# Save a high-resolution version for slides
+# ggsave(
+#   filename = here::here("images", "prediction_instability_500.png"),
+#   plot     = instability_plot_500,
+#   width    = 6.5, height = 6.5, dpi = 320, bg = "white"
+# )
+```
+
+# Calibration Instability Plot
+
+Based on Riley & Collins (2023, Biometrical Journal), Section 3.2.2 / Box 1, implemented via the `pminternal` package, using the actual `stability_plot.R` / `util.R` source (not just documentation) to confirm behavior.
+
+This reuses the same simulated data, the same development-sample splits (N = 100 and N = 500), and the same fitted `glm` models / `validate()` results as in `prediction_instabilty.qmd`. If you are running this in the same R session right after that file, you can skip straight to the "Calibration instability" chunks below and reuse the existing `mod` / `val` objects instead of refitting.
+
+<!-- Define further functions for calibration instability plots -->
+
+```{r}
+#| label: calibration-instability-functions
+
+# Extracts a tidy long data frame from pminternal::calibration_stability(plot = FALSE).
+#
+# Confirmed from pminternal's actual source (stability_plot.R):
+#   curves <- apply(stabil, 2, function(p) {
+#     ...
+#     data.frame(p = cc$plot$p, pc = cc$plot$p_c_plot)
+#   })
+# calibration_stability() therefore returns a list of B+1 data frames, each
+# with columns 'p' (predicted risk, x-axis) and 'pc' (calibrated/observed
+# risk, y-axis). Element 1 is always the apparent (original model) curve;
+# elements 2:(B+1) are the bootstrap model curves. Each curve is evaluated at
+# 100 points spanning THAT curve's own min/max predicted risk (not a shared
+# grid) -- see note in build_calibration_curve_data() below.
+build_calibration_curve_data <- function(val_result) {
+
+  # NOTE: it is tempting to pass calib_args = list(eval = my_grid) to force a
+  # shared evaluation grid across the original and all B bootstrap curves.
+  # This does NOT work with this version of pminternal: if calib_args$eval is
+  # a vector of length > 1, calibration_stability() explicitly discards it
+  # and replaces it with eval = 100 (a point COUNT, not explicit grid values),
+  # emitting a message to that effect. So we just use the function's own
+  # default 100-point-per-curve grid, and instead interpolate onto a common
+  # grid ourselves afterward (see build_calibration_band()) for any summary
+  # that needs curves aligned on the same x values.
+  cal_curves <- pminternal::calibration_stability(val_result, plot = FALSE)
+
+  curve_data <- dplyr::bind_rows(lapply(seq_along(cal_curves), function(i) {
+    df <- cal_curves[[i]]
+    data.frame(replicate = i - 1L, x = df$p, y = df$pc)
+  }))
+
+  list(
+    original = dplyr::filter(curve_data, replicate == 0),
+    boot     = dplyr::filter(curve_data, replicate != 0)
+  )
+}
+
+# Linearly interpolates one calibration curve onto a common grid of x values.
+# rule = 2 extends the boundary value flat beyond each curve's own observed
+# range (mirroring the pmax/pmin clamping used for the prediction instability
+# ribbon), so every bootstrap curve contributes a value at every grid point.
+interpolate_curve <- function(curve_df, grid) {
+  data.frame(
+    x = grid,
+    y = approx(x = curve_df$x, y = curve_df$y, xout = grid, rule = 2)$y
+  )
+}
+
+# Convenience helper: the full plotting/grid range should span every curve
+# that will actually be drawn (original + all bootstrap replicates), not just
+# the original model's own range. Using only the original's range previously
+# caused the smoothed 95% band to stop short of where some raw bootstrap
+# curves visibly extend to on the plot -- i.e. thin spaghetti lines poking out
+# past the band's right edge. This computes the grid over the true combined
+# extent instead, so the band always covers everything that is plotted.
+full_curve_grid <- function(original_curve, boot_curves, length_out = 200) {
+  rng <- range(c(original_curve$x, boot_curves$x))
+  seq(rng[1], rng[2], length.out = length_out)
+}
+
+# Builds a 95% pointwise band across the B bootstrap calibration curves, after
+# aligning them onto a common grid (needed because each bootstrap curve has
+# its own native x-domain -- see note above). The grid passed in should come
+# from full_curve_grid() so the band's domain matches what is actually drawn.
+#
+# The raw pointwise 2.5th/97.5th percentiles at each grid value are noisy on
+# their own (especially at small N, where each grid point's quantile is based
+# on relatively few effective bootstrap curves near that x value), producing a
+# jagged band. To smooth this, the lower and upper boundary sequences are each
+# passed through loess() across x, mirroring the smoothing already used for
+# the prediction instability ribbon (span between 0.2 and 0.8; try higher
+# values for rougher/smaller-N bands, lower values to preserve more local
+# detail). Set smooth = FALSE to get the raw (unsmoothed) band instead.
+build_calibration_band <- function(boot_curves, grid, smooth = TRUE, span = 0.5) {
+
+  raw_band <- boot_curves |>
+    dplyr::group_by(replicate) |>
+    dplyr::group_modify(~ interpolate_curve(.x, grid)) |>
+    dplyr::ungroup() |>
+    dplyr::group_by(x) |>
+    dplyr::summarise(
+      lower_95 = quantile(y, probs = 0.025, na.rm = TRUE),
+      upper_95 = quantile(y, probs = 0.975, na.rm = TRUE),
+      .groups = "drop"
+    )
+
+  if (!smooth) return(raw_band)
+
+  lower_loess <- loess(lower_95 ~ x, data = raw_band, span = span, degree = 1)
+  upper_loess <- loess(upper_95 ~ x, data = raw_band, span = span, degree = 1)
+
+  raw_band |>
+    dplyr::mutate(
+      lower_95 = predict(lower_loess, newdata = data.frame(x = x)),
+      upper_95 = predict(upper_loess, newdata = data.frame(x = x)),
+      # keep numerical loess overshoot within the probability scale
+      lower_95 = pmax(0, pmin(1, lower_95)),
+      upper_95 = pmax(0, pmin(1, upper_95))
+    )
+}
+
+# Presentation-quality calibration instability plot, styled to match the
+# prediction instability plot (theme_minimal, blue/red palette, coord_equal),
+# and following pminternal's own plotting convention confirmed from source:
+# original curve dashed/black, bootstrap curves solid/grey (here recolored to
+# match the existing blue/red palette).
+build_calibration_instability_plot <- function(original_curve, boot_curves, boot_band) {
+
+  # Two-line x-axis title with a smaller sub-line, via ggtext::element_markdown().
+  # <br> forces the line break; the inline <span style='font-size:...'> shrinks
+  # only the second line. Markdown ** ** bolds just the first line, since the
+  # axis.title.x theme element below is not set to face = "bold" globally.
+  x_title <- "**Estimated risk**<br><span style='font-size:11.5pt'>**(original model, dashed; bootstrap models, solid)**</span>"
+
+  ggplot() +
+    geom_ribbon(
+      data = boot_band,
+      aes(x = x, ymin = lower_95, ymax = upper_95),
+      inherit.aes = FALSE,
+      fill = "#1F78B4",
+      alpha = 0.12
+    ) +
+    
+    geom_line(
+    data = boot_band,
+    aes(x = x, y = lower_95),
+    inherit.aes = FALSE,
+    color = "#08519C",
+    linewidth = 0.8
+  ) +
+  geom_line(
+    data = boot_band,
+    aes(x = x, y = upper_95),
+    inherit.aes = FALSE,
+    color = "#08519C",
+    linewidth = 0.8
+  ) +
+    
+    geom_line(
+      data = boot_curves,
+      aes(x = x, y = y, group = replicate),
+      inherit.aes = FALSE,
+      color = "#1F78B4",
+      alpha = 0.10,
+      linewidth = 0.4
+    ) +
+    geom_line(
+      data = original_curve,
+      aes(x = x, y = y),
+      inherit.aes = FALSE,
+      color = "#08519C",
+      linetype = "dashed",
+      linewidth = 1.1
+    ) +
+    geom_abline(
+      slope = 1,
+      intercept = 0,
+      color = "#D73027",
+      linetype = "solid",
+      linewidth = 0.9
+    ) +
+    annotate(
+      geom = "label",
+      x = 0.72,
+      y = 0.64,
+      label = "Perfect calibration",
+      text.color = "#D73027",
+      border.color = "#D73027",
+      fill = "white",
+      fontface = "bold",
+      size = 4
+    ) +
+    annotate(
+      geom = "label",
+      x = 0.015,
+      y = 0.90,
+      label = "Smoothed 95% calibration stability interval",
+      text.color = "#08519C",
+      border.color = "#08519C",
+      fill = "white",
+      fontface = "bold",
+      size = 2.5,
+      hjust = 0
+    ) +
+    coord_equal(xlim = c(0, 1), ylim = c(0, 1), expand = FALSE) +
+    scale_x_continuous(breaks = seq(0, 1, 0.2)) +
+    scale_y_continuous(breaks = seq(0, 1, 0.2)) +
+    labs(
+      x = x_title,
+      y = "Observed risk in original dataset"
+    ) +
+    theme_minimal(base_size = 15) +
+    theme(
+      panel.grid.minor = element_blank(),
+      panel.grid.major = element_line(color = "grey88", linewidth = 0.35),
+      axis.title.x = ggtext::element_markdown(margin = margin(t = 10), lineheight = 1.15),
+      axis.title.y = element_text(face = "bold", margin = margin(r = 10)),
+      axis.text = element_text(color = "grey20"),
+      plot.margin = margin(12, 18, 12, 12)
+    )
+}
+```
+
+## development data = 100 obs
+
+```{r}
+#| label: calibration-instability-100
+curves_100 <- build_calibration_curve_data(val_100$result)
+
+# Grid spans the FULL combined range of the original curve AND all bootstrap
+# curves, not just the original model's own range -- otherwise the smoothed
+# band stops short of where some bootstrap curves actually extend to.
+grid_100 <- full_curve_grid(curves_100$original, curves_100$boot, length_out = 200)
+
+# Smaller N -> noisier percentile band -> a slightly wider loess span helps.
+band_100 <- build_calibration_band(curves_100$boot, grid_100, smooth = TRUE, span = 0.6)
+
+calibration_instability_plot_100 <- build_calibration_instability_plot(
+  original_curve = curves_100$original,
+  boot_curves    = curves_100$boot,
+  boot_band      = band_100
+)
+
+calibration_instability_plot_100
+
+# ggsave(
+#   filename = here::here("images", "calibration_instability_100.png"),
+#   plot     = calibration_instability_plot_100,
+#   width    = 6.5, height = 6.5, dpi = 320, bg = "white"
+# )
+```
+
+## development data = 500 obs
+
+```{r}
+#| label: calibration-instability-500
+curves_500 <- build_calibration_curve_data(val_500$result)
+
+grid_500 <- full_curve_grid(curves_500$original, curves_500$boot, length_out = 200)
+
+# Larger N -> already less noisy -> a narrower loess span preserves more detail.
+band_500 <- build_calibration_band(curves_500$boot, grid_500, smooth = TRUE, span = 0.4)
+
+calibration_instability_plot_500 <- build_calibration_instability_plot(
+  original_curve = curves_500$original,
+  boot_curves    = curves_500$boot,
+  boot_band      = band_500
+)
+
+calibration_instability_plot_500
+
+# ggsave(
+#   filename = here::here("images", "calibration_instability_500.png"),
+#   plot     = calibration_instability_plot_500,
+#   width    = 6.5, height = 6.5, dpi = 320, bg = "white"
+# )
+```
+
+# Mean absolute predictor error (MAPE)
+
+<!-- MAPE helper functions -->
+
+```{r}
+#| label: MAPE-helper-functions
+
+# Riley & Collins (2023), Section 3.2.3: mean absolute predictor error (MAPE)
+# for individual i is the mean, across the B bootstrap models, of the absolute
+# difference between that individual's bootstrap-model prediction and their
+# original-model prediction. Average MAPE is that value further averaged
+# across all N individuals in the development dataset.
+#
+# pminternal::mape_stability() implements this directly (confirmed from
+# stability_plot.R source):
+#   pe <- apply(p_boot, 2, function(pb) abs(p_orig - pb))
+#   individual_mape <- apply(pe, 1, mean)
+#   average_mape <- mean(individual_mape)
+# Calling it with plot = FALSE suppresses the base-R scatterplot and returns
+# list(individual_mape, average_mape) invisibly -- no custom extraction logic
+# needed here, unlike the calibration curves.
+summarize_mape <- function(val_result) {
+  mape <- pminternal::mape_stability(val_result, plot = FALSE)
+  list(
+    individual_mape = mape$individual_mape,
+    average_mape    = mape$average_mape
+  )
+}
+
+
+# Riley & Collins (2023), Section 3.2.4: the MAPE instability plot is a
+# scatter of each individual's MAPE (y-axis) against their original model's
+# estimated risk (x-axis). pminternal::mape_stability() does not return the
+# original predictions alongside individual_mape, so orig_pred is supplied
+# separately (captured directly from predict(mod, type = "response") in the
+# development-data chunks below, right after each model is fit -- this avoids
+# relying on 'mod' still pointing to the right model later in the script).
+#
+# Kept deliberately simple: semi-transparent points only
+# (to counter overplotting), no smoothed bounds/ribbon. A dashed horizontal
+# line marks the average MAPE for context, reusing the same value already
+# reported in the gt table above -- not a stability interval, just an
+# annotation of the single summary number already computed.
+
+build_mape_instability_plot <- function(orig_pred, individual_mape, average_mape,
+                                         y_limits = NULL) {
+
+  df <- data.frame(orig_pred = orig_pred, individual_mape = individual_mape)
+
+  p <- ggplot(df, aes(x = orig_pred, y = individual_mape)) +
+    geom_hline(
+      yintercept = average_mape,
+      color = "#08519C",
+      linetype = "dashed",
+      linewidth = 0.7
+    ) +
+    geom_point(
+      color = "#1F78B4",
+      alpha = 0.25,
+      size = 1.4
+    ) +
+    annotate(
+      geom = "text",
+      x = 0.98,
+      y = average_mape,
+      label = sprintf("Average MAPE = %.4f", average_mape),
+      color = "#08519C",
+      hjust = 1,
+      vjust = -0.7,
+      size = 3.2,
+      fontface = "bold"
+    ) +
+    scale_x_continuous(limits = c(0, 1), breaks = seq(0, 1, 0.2)) +
+    labs(
+      x = "Estimated risk from development model",
+      y = "Mean absolute prediction error (MAPE)"
+    ) +
+    theme_minimal(base_size = 15) +
+    theme(
+      panel.grid.minor = element_blank(),
+      panel.grid.major = element_line(color = "grey88", linewidth = 0.35),
+      axis.title = element_text(face = "bold"),
+      axis.title.x = element_text(margin = margin(t = 10)),
+      axis.title.y = element_text(margin = margin(r = 10)),
+      axis.text = element_text(color = "grey20"),
+      plot.margin = margin(12, 18, 12, 12)
+    )
+
+  if (!is.null(y_limits)) {
+    p <- p + coord_cartesian(ylim = y_limits)
+  }
+
+  p
+}
+```
+
+## development data = 100 obs
+
+```{r}
+#| label: average-mape-100
+mape_100 <- summarize_mape(val_100$result)
+
+# Average MAPE across all N = 100 individuals in the development dataset.
+mape_100$average_mape
+
+# Quick distributional check on the individual-level values that feed into it
+# (useful before building a full MAPE instability plot later).
+summary(mape_100$individual_mape)
+```
+
+
+```{r}
+#| label: mape-instability-100
+# Fix the y-axis range using the N = 100 case (the wider MAPE range) and reuse
+# it for the N = 500 plot further below, so the two plots share one axis and
+# the visual reduction in instability from N = 100 to N = 500 isn't distorted
+# by each plot auto-scaling to its own (progressively narrower) range. 
+
+mape_ylim <- c(0, max(mape_100$individual_mape))
+
+mape_instability_plot_100 <- build_mape_instability_plot(
+  orig_pred       = orig_pred_100,
+  individual_mape = mape_100$individual_mape,
+  average_mape    = mape_100$average_mape,
+  y_limits        = mape_ylim
+)
+
+mape_instability_plot_100
+
+ggsave(
+  filename = here::here("images", "mape_instability_100.png"),
+  plot     = mape_instability_plot_100,
+  width    = 6.5, height = 5, dpi = 320, bg = "white"
+)
+```
+
+
+
+## development data = 500 obs
+
+```{r}
+#| label: average-mape-500
+mape_500 <- summarize_mape(val_500$result)
+
+mape_500$average_mape
+summary(mape_500$individual_mape)
+```
+
+
+```{r}
+#| label: mape-instability-500
+# Reuses mape_ylim from the N = 100 chunk above -- same y-axis range on
+# purpose, for direct visual comparison against the N = 100 plot.
+mape_instability_plot_500 <- build_mape_instability_plot(
+  orig_pred       = orig_pred_500,
+  individual_mape = mape_500$individual_mape,
+  average_mape    = mape_500$average_mape,
+  y_limits        = mape_ylim
+)
+
+mape_instability_plot_500
+
+
+ggsave(
+  filename = here::here("images", "mape_instability_500.png"),
+  plot     = mape_instability_plot_500,
+  width    = 6.5, height = 5, dpi = 320, bg = "white"
+)
+```
+
+
+## Comparing average MAPE across sample sizes
+
+```{r}
+#| label: mape-summary
+# Mirrors the compact reporting style used in Riley & Collins' own figures
+# (e.g. Figure 5/7 captions: "Average MAPE 0.0027 / 0.032").
+mape_summary <- tibble::tibble(
+  development_n = c(100, 500),
+  average_mape   = c(mape_100$average_mape, mape_500$average_mape)
+)
+
+mape_summary
+
+# Save the mape_summary table to the duckDB
+con <- dbConnect(duckdb(), dbdir = "data/sim_data.duckdb")
+
+dbWriteTable(con, "mape_summary", mape_summary, overwrite = TRUE)
+
+# A check that the tables are in the DB:
+dbListTables(con)
+
+# Disconnect:
+dbDisconnect(con, shutdown = TRUE)
+rm(con)
+```

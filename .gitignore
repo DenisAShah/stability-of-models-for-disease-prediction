@@ -1,0 +1,17 @@
+/.quarto/
+/_site/
+
+# R / RStudio local state
+.Rhistory
+.RData
+.Ruserdata
+.Rproj.user/
+
+EpidemWrkShopTalkwithNotes*
+
+# Render/cache artifacts
+*.pdf
+
+# Project-specific data and outputs
+data/
+
