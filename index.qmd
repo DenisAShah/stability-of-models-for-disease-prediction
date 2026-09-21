@@ -560,6 +560,9 @@ However, in practice when developing a model researchers will not know the “tr
 ### 500 obs
 
 ![](images/prediction_instability_500.png){width="60%" fig-align="center"}
+
+### 1,000 obs
+![](images/prediction_instability_1000.png){width="60%" fig-align="center"}
 :::
 
 ::: notes
@@ -606,10 +609,16 @@ As calibration will not be familiar to the majority of the audience, this slide 
 ### 500 obs
 
 ![](images/calibration_instability_500.png){width="60%" fig-align="center"}
+
+### 1000 obs
+
+![](images/calibration_instability_1000.png){width="60%" fig-align="center"}
 :::
 
 ::: notes
 **Red** line: perfect calibration. There is a **black** line, representing the calibration of the fitted model on the development dataset. But as we mentioned, calibration is almost always near-perfect in the development dataset, and so the black line is actually almost indistinguishable from the red line. **Pale blue** lines are the individual bootstrap models calibration curves. The **thicker blue lines** are 95% intervals for the individual bootstrap calibration curves. Instability seen with model development sample size of 100. And has been reduced with the 500 obs sample size.
+
+Question that may come up: it appears the upper range of estimated risk is higher in the 500 obs sample than in the 1,000 obs sample. That is indeed true with these samples.  In the 500 obs sample, the max fitted probability was 0.896. For the 1,000 obs sample it was 0.804. 
 :::
 
 ## Summaries of instability {auto-animate="true"}
@@ -639,7 +648,8 @@ rm(con)
 pct_reduction <- (mape_summary$average_mape[1] - mape_summary$average_mape[2]) /
   mape_summary$average_mape[1] * 100
 
-mape_gt <- mape_summary |>
+mape_gt <- 
+  mape_summary |>
   dplyr::mutate(development_n = as.integer(development_n)) |>
   gt::gt() |>
   gt::tab_header(
@@ -725,6 +735,10 @@ Assumption: Estimating what the error would be assuming the bootstrap models rep
 ### 500 obs
 
 ![](images/mape_instability_500.png){width="60%" fig-align="center"}
+
+### 1000 obs
+
+![](images/mape_instability_1000.png){width="60%" fig-align="center"}
 :::
 
 ::: notes
