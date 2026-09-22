@@ -3,3 +3,15 @@
   color: #8B1E3F;
   font-weight: 700;
 }
+
+
+/*-- stack author blocks vertically --*/
+.reveal .quarto-title-block .quarto-title-authors {
+  flex-direction: column;
+  align-items: center;
+}
+
+/*-- adds breathing room between the two blocks --*/
+.reveal .quarto-title-block .quarto-title-author {
+  margin-bottom: 0.8em;
+}

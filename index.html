@@ -100,7 +100,7 @@
     code span.vs { color: #20794d; } /* VerbatimString */
     code span.wa { color: #5e5e5e; font-style: italic; } /* Warning */
   </style>
-  <link rel="stylesheet" href="index_files/libs/revealjs/dist/theme/quarto-5e9023da0eae97c1b993b49f30634537.css">
+  <link rel="stylesheet" href="index_files/libs/revealjs/dist/theme/quarto-ce658ad2ab95a14fcae1a5e318f2a72b.css">
   <link href="index_files/libs/revealjs/plugin/quarto-line-highlight/line-highlight.css" rel="stylesheet">
   <link href="index_files/libs/revealjs/plugin/reveal-menu/menu.css" rel="stylesheet">
   <link href="index_files/libs/revealjs/plugin/reveal-menu/quarto-menu.css" rel="stylesheet">
@@ -246,7 +246,8 @@ Pierce Paul, Laurence Madden
 </ul></li>
 </ul>
 <aside class="notes">
-<p>We focus on LR models, because they are common, useful models in <em>pde</em>. We assume that the audience has some familiarity with fitting and interpreting LR models, and so will not get into their specifics here..</p>
+<p>We focus on LR models, because they are common, useful models in <em>pde</em>.</p>
+<p>We assume that the audience has some familiarity with fitting and interpreting LR models, and so will not get into their specifics here.</p>
 <style type="text/css">
         span.MJX_Assistive_MathML {
           position:absolute!important;
@@ -278,12 +279,12 @@ Pierce Paul, Laurence Madden
 <li class="fragment"><p>Missing data</p></li>
 <li class="fragment"><p>The model-building strategy</p>
 <ul>
-<li class="fragment">Variable selection, variable representation, interactions, penalization etc…</li>
+<li class="fragment">Variable selection, variable representation, interactions, penalization etc.</li>
 </ul></li>
 </ul>
 <aside class="notes">
-<p>Imbalance: we are in most instances trying to predict a rare outcome. These factors all impact model performance, such as the model’s accuracy.</p>
-<p>What we mean by proxy: operational proxy for the true component causes. The true component (LWD) may be difficult to measure or obtain, so we use an operational proxy (RH) which is more readily available and can be used from an operational standpoint.</p>
+<p><strong>Imbalance:</strong> we are in most instances trying to predict a rare outcome. These factors all impact model performance, such as the model’s accuracy.</p>
+<p><strong>What we mean by proxy:</strong> operational proxy for the true component causes. The true component (LWD) may be difficult to measure or obtain, so we use an operational proxy (RH) which is more readily available and can be used from an operational standpoint.</p>
 <style type="text/css">
         span.MJX_Assistive_MathML {
           position:absolute!important;
@@ -319,6 +320,19 @@ Pierce Paul, Laurence Madden
 <!-- Unreliable predictions are indicative of [unstable models]{style="color: #8B1E3F; font-weight: 700;"} -->
 <!-- But define the style once in the .scss file, and use the selector: -->
 <p>Unreliable predictions are indicative of <span class="highlight">unstable models</span></p>
+<aside class="notes">
+<p><strong>The model complexity temptation:</strong> there is the temptation to put as many variables into the model as we have, without thinking of how much data is actually available to estimate the parameters (consider the number of events per predictor parameter).</p>
+<style type="text/css">
+        span.MJX_Assistive_MathML {
+          position:absolute!important;
+          clip: rect(1px, 1px, 1px, 1px);
+          padding: 1px 0 0 0!important;
+          border: 0!important;
+          height: 1px!important;
+          width: 1px!important;
+          overflow: hidden!important;
+          display:block!important;
+      }</style></aside>
 </div>
 </section>
 <section id="model-instability" class="slide level2">
@@ -330,7 +344,7 @@ Pierce Paul, Laurence Madden
 </ul>
 </div>
 <div class="fragment">
-<p>Leads to instability in …</p>
+<p>Insufficient sample size leads to instability in …</p>
 <!-- Add some space before the next section header -->
 <div style="height: 1.0em;">
 
@@ -348,7 +362,7 @@ Pierce Paul, Laurence Madden
 </div>
 <div class="fragment">
 <ul>
-<li>Unstable model specification ⟶ instability in <em>predicted risk</em></li>
+<li>Unstable <em>model specification</em> ⟶ instability in <em>predicted risk</em></li>
 </ul>
 </div>
 <div class="fragment">
@@ -357,7 +371,8 @@ Pierce Paul, Laurence Madden
 </ul>
 </div>
 <aside class="notes">
-<p>In this talk, we’ll focus on the <strong>stability</strong> of predictions. Complex models: there is the temptation to put as many variables into the model as we have, without thinking of how much data is actually available to estimate the parameters (consider the number of events per predictor parameter). We have to recognize the limitations of our datasets, which may be too small for reliably estimating a model.</p>
+<p>In this talk, we’ll focus on the <strong>stability</strong> of predictions.</p>
+<p>We have to recognize the limitations of our datasets, which may be too small for reliably estimating a model.</p>
 <style type="text/css">
         span.MJX_Assistive_MathML {
           position:absolute!important;
@@ -370,7 +385,7 @@ Pierce Paul, Laurence Madden
           display:block!important;
       }</style></aside>
 </section>
-<section id="stability-of-predictions" class="slide level2">
+<section id="stability-of-predictions" class="slide level2 scrollable">
 <h2>Stability of predictions</h2>
 <div class="fragment fade-in-then-semi-out">
 <ul>
@@ -382,13 +397,17 @@ Pierce Paul, Laurence Madden
 <li><span class="highlight">Measurement</span> of instability</li>
 </ul>
 </div>
-<div class="fragment">
-<p>Based on Riley, R. D., &amp; Collins, G. S. (2023). Stability of clinical prediction models developed using statistical or machine learning methods.</p>
+<div style="height: 14.0em;">
+
 </div>
 
 <aside class="notes">
 <p>The concepts we are presenting are based on the paper by Riley &amp; Collins (2023). The reference is listed at the bottom of the slide.</p>
-<p>To formally address the stability of LR models, we need to (i) define what we mean by instability, and (ii) propose how we intend to measure instability.</p>
+<p>To formally address the stability of LR models, we need to:</p>
+<ol type="i">
+<li><strong>define</strong> what we mean by instability, and</li>
+<li>propose how we intend to <strong>measure</strong> instability.</li>
+</ol>
 <style type="text/css">
         span.MJX_Assistive_MathML {
           position:absolute!important;
@@ -439,10 +458,26 @@ Pierce Paul, Laurence Madden
 <li>This can start to reveal instability at the individual observation level</li>
 </ul></li>
 </ul>
-<!-- #### How to assess -->
-<!-- - Calibration curves of estimated vs observed risk -->
-<!-- - Mean absolute prediction error (MAPE) -->
-<!--   - mean of the absolute difference between the estimated risks (from the fitted model) and the true risks (from the assumed data generating model) -->
+<aside class="notes">
+<p>How to assess (we get deeper into this later in the <em>Assessing model instability</em> and <em>Summaries of instability</em> sections)</p>
+<ul>
+<li><p><strong>Calibration curves</strong> of estimated vs observed risk</p></li>
+<li><p><strong>Mean absolute prediction error</strong> (MAPE)</p>
+<ul>
+<li>mean of the absolute difference between the estimated risks (from the fitted model) and the true risks (from the assumed data generating model)</li>
+</ul></li>
+</ul>
+<style type="text/css">
+        span.MJX_Assistive_MathML {
+          position:absolute!important;
+          clip: rect(1px, 1px, 1px, 1px);
+          padding: 1px 0 0 0!important;
+          border: 0!important;
+          height: 1px!important;
+          width: 1px!important;
+          overflow: hidden!important;
+          display:block!important;
+      }</style></aside>
 
 <aside><div>
 <p>Riley, R. D., &amp; Collins, G. S. (2023). Stability of clinical prediction models developed using statistical or machine learning methods. <a href="https://doi.org/10.1002/bimj.202200302">Biometrical Journal, 65, 2200302.</a></p>
@@ -454,13 +489,29 @@ Pierce Paul, Laurence Madden
 <ul>
 <li><p>Subgroups defined by a particular covariate (it does not have to be part of the model)</p>
 <ul>
-<li>E.g., the subset of observations for which the predictor mean(RH) &lt; 70%</li>
+<li>E.g., the subset of observations for which the condition <code>mean(RH) &lt; 70%</code> holds for the predictor <code>mean(RH)</code></li>
 </ul></li>
 </ul>
-<!-- ##### How to assess: -->
-<!-- - Distribution of the mean predicted probabilities in this subset of observations for models fit to different (bootstrap) versions of the development dataset -->
-<!-- - Is there large variability in the predictions? -->
-<!--   - Any two models $M_{b1}$ and $M_{b2}$ may differ considerably in their estimated risks for the subgroup ⟹ instability -->
+<aside class="notes">
+<p>How to assess:</p>
+<ul>
+<li><p>Distribution of the mean predicted probabilities in this subset of observations for models fit to different (bootstrap) versions of the development dataset</p></li>
+<li><p>Is there large variability in the predictions?</p>
+<ul>
+<li>Any two models <span class="math inline">\(M_{b1}\)</span> and <span class="math inline">\(M_{b2}\)</span> may differ considerably in their estimated risks for the subgroup ⟹ instability</li>
+</ul></li>
+</ul>
+<style type="text/css">
+        span.MJX_Assistive_MathML {
+          position:absolute!important;
+          clip: rect(1px, 1px, 1px, 1px);
+          padding: 1px 0 0 0!important;
+          border: 0!important;
+          height: 1px!important;
+          width: 1px!important;
+          overflow: hidden!important;
+          display:block!important;
+      }</style></aside>
 
 <!-- Option 1 for this slide -->
 <aside><div>
@@ -476,10 +527,26 @@ Pierce Paul, Laurence Madden
 <li>If the estimates vary a lot ⟹ instability at the <em>individual</em> level</li>
 </ul></li>
 </ul>
-<!-- ##### How to assess: -->
-<!-- - Vary the input development dataset (keep sample size the same) -->
-<!--   - Fit the same model to each dataset -->
-<!-- - What do the different models predict for a given *individual* observation? -->
+<aside class="notes">
+<p>How to assess: (more details in the <em>Assessing model instability</em> and <em>Summaries of instability</em> sections)</p>
+<ul>
+<li><p>Vary the input development dataset (keep sample size the same)</p>
+<ul>
+<li>Fit the same model to each dataset</li>
+</ul></li>
+<li><p>What do the different models predict for a given <em>individual</em> observation?</p></li>
+</ul>
+<style type="text/css">
+        span.MJX_Assistive_MathML {
+          position:absolute!important;
+          clip: rect(1px, 1px, 1px, 1px);
+          padding: 1px 0 0 0!important;
+          border: 0!important;
+          height: 1px!important;
+          width: 1px!important;
+          overflow: hidden!important;
+          display:block!important;
+      }</style></aside>
 
 <!-- Option 2 for this slide: varying width columns -->
 <!-- ## Levels of instability {auto-animate="true"} -->
@@ -533,7 +600,10 @@ Pierce Paul, Laurence Madden
 <li><p>Examine instability in a different way: via <span class="highlight">bootstrapping</span> of the development data</p></li>
 </ul>
 <aside class="notes">
-<p>When developing a model, we do not know the true risk of an individual. Therefore, we need to examine instability in a different way, using the development data itself. The method for doing that is based on the bootstrap. Why the bootstrap? Because it is a technique built to examine sampling variability, so fits perfectly into how variability in the development dataset affects model development and performance.</p>
+<p>When developing a model, we do not know the true risk of an individual.</p>
+<p>Therefore, we need to examine instability in a different way, using the development data itself.</p>
+<p>The method for doing that is based on the bootstrap.</p>
+<p>Why the bootstrap? Because it is a technique built to examine sampling variability, so fits perfectly into how variability in the development dataset affects model development and performance.</p>
 <style type="text/css">
         span.MJX_Assistive_MathML {
           position:absolute!important;
@@ -559,7 +629,9 @@ Pierce Paul, Laurence Madden
 <li><p>Store the <span class="math inline">\(B\)</span> predictions, as well as the original prediction for each individual <span class="math inline">\(i\)</span></p></li>
 </ol>
 <aside class="notes">
-<p>May want to skip this slide, instead of going through it; or just point out that it is a simple algorithm without going over the details. The point is, it is a relatively simple algorithm. M_o means the model (M) fit on the original (o) development dataset.</p>
+<p>May want to skip this slide, instead of going through it; or just point out that it is a simple algorithm without going over the details.</p>
+<p>The point is, it is a relatively simple algorithm.</p>
+<p><span class="math inline">\(M_o\)</span> means the model (M) fit on the original (o) development dataset.</p>
 <style type="text/css">
         span.MJX_Assistive_MathML {
           position:absolute!important;
@@ -575,7 +647,21 @@ Pierce Paul, Laurence Madden
 <section>
 <section id="illustration-of-instability" class="title-slide slide level1 center">
 <h1>Illustration of instability</h1>
-
+<aside class="notes">
+<p>We’ll use a simulated dataset to illustrate instability in model development?</p>
+<p>Why a simulated dataset? Because we can use this as a <code>ground truth</code> and specify the population structure.</p>
+<p>The structure will be described in the next slide.</p>
+<style type="text/css">
+        span.MJX_Assistive_MathML {
+          position:absolute!important;
+          clip: rect(1px, 1px, 1px, 1px);
+          padding: 1px 0 0 0!important;
+          border: 0!important;
+          height: 1px!important;
+          width: 1px!important;
+          overflow: hidden!important;
+          display:block!important;
+      }</style></aside>
 </section>
 <section id="simulated-dataset" class="slide level2" data-auto-animate="true">
 <h2 data-id="quarto-animate-title">Simulated dataset</h2>
@@ -598,7 +684,8 @@ Pierce Paul, Laurence Madden
 <li>Draw two random (<span class="highlight">model development samples</span>) of 100 and 500 observations from the population</li>
 </ul>
 <aside class="notes">
-<p>x1’s coefficient is twice x2’s, so x1 contributes 4x the <em>variance</em> of x2 (since variance scales with beta^2). x3 is unrelated to the outcome.</p>
+<p>x1’s coefficient is twice x2’s, so x1 contributes 4x the <em>variance</em> of x2 (since variance scales with beta^2).</p>
+<p>x3 is unrelated to the outcome.</p>
 <style type="text/css">
         span.MJX_Assistive_MathML {
           position:absolute!important;
@@ -616,23 +703,23 @@ Pierce Paul, Laurence Madden
 <!-- Load the data -->
 <div class="cell">
 <div class="cell-output-display">
-<div id="bupvhlybei" style="padding-left:0px;padding-right:0px;padding-top:10px;padding-bottom:10px;overflow-x:auto;overflow-y:auto;width:auto;height:auto;">
-<style>#bupvhlybei table {
+<div id="qmkgqtwyfo" style="padding-left:0px;padding-right:0px;padding-top:10px;padding-bottom:10px;overflow-x:auto;overflow-y:auto;width:auto;height:auto;">
+<style>#qmkgqtwyfo table {
   font-family: system-ui, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
-#bupvhlybei thead, #bupvhlybei tbody, #bupvhlybei tfoot, #bupvhlybei tr, #bupvhlybei td, #bupvhlybei th {
+#qmkgqtwyfo thead, #qmkgqtwyfo tbody, #qmkgqtwyfo tfoot, #qmkgqtwyfo tr, #qmkgqtwyfo td, #qmkgqtwyfo th {
   border-style: none;
 }
 
-#bupvhlybei p {
+#qmkgqtwyfo p {
   margin: 0;
   padding: 0;
 }
 
-#bupvhlybei .gt_table {
+#qmkgqtwyfo .gt_table {
   display: table;
   border-collapse: collapse;
   line-height: normal;
@@ -658,12 +745,12 @@ Pierce Paul, Laurence Madden
   border-left-color: #D3D3D3;
 }
 
-#bupvhlybei .gt_caption {
+#qmkgqtwyfo .gt_caption {
   padding-top: 4px;
   padding-bottom: 4px;
 }
 
-#bupvhlybei .gt_title {
+#qmkgqtwyfo .gt_title {
   color: #333333;
   font-size: 24px;
   font-weight: initial;
@@ -675,7 +762,7 @@ Pierce Paul, Laurence Madden
   border-bottom-width: 0;
 }
 
-#bupvhlybei .gt_subtitle {
+#qmkgqtwyfo .gt_subtitle {
   color: #333333;
   font-size: 15px;
   font-weight: initial;
@@ -687,7 +774,7 @@ Pierce Paul, Laurence Madden
   border-top-width: 0;
 }
 
-#bupvhlybei .gt_heading {
+#qmkgqtwyfo .gt_heading {
   background-color: #FFFFFF;
   text-align: center;
   border-bottom-color: #FFFFFF;
@@ -699,13 +786,13 @@ Pierce Paul, Laurence Madden
   border-right-color: #D3D3D3;
 }
 
-#bupvhlybei .gt_bottom_border {
+#qmkgqtwyfo .gt_bottom_border {
   border-bottom-style: solid;
   border-bottom-width: 2px;
   border-bottom-color: #08519C;
 }
 
-#bupvhlybei .gt_col_headings {
+#qmkgqtwyfo .gt_col_headings {
   border-top-style: solid;
   border-top-width: 2px;
   border-top-color: #D3D3D3;
@@ -720,7 +807,7 @@ Pierce Paul, Laurence Madden
   border-right-color: #D3D3D3;
 }
 
-#bupvhlybei .gt_col_heading {
+#qmkgqtwyfo .gt_col_heading {
   color: #333333;
   background-color: #FFFFFF;
   font-size: 18px;
@@ -740,7 +827,7 @@ Pierce Paul, Laurence Madden
   overflow-x: hidden;
 }
 
-#bupvhlybei .gt_column_spanner_outer {
+#qmkgqtwyfo .gt_column_spanner_outer {
   color: #333333;
   background-color: #FFFFFF;
   font-size: 18px;
@@ -752,15 +839,15 @@ Pierce Paul, Laurence Madden
   padding-right: 4px;
 }
 
-#bupvhlybei .gt_column_spanner_outer:first-child {
+#qmkgqtwyfo .gt_column_spanner_outer:first-child {
   padding-left: 0;
 }
 
-#bupvhlybei .gt_column_spanner_outer:last-child {
+#qmkgqtwyfo .gt_column_spanner_outer:last-child {
   padding-right: 0;
 }
 
-#bupvhlybei .gt_column_spanner {
+#qmkgqtwyfo .gt_column_spanner {
   border-bottom-style: solid;
   border-bottom-width: 2px;
   border-bottom-color: #D3D3D3;
@@ -772,11 +859,11 @@ Pierce Paul, Laurence Madden
   width: 100%;
 }
 
-#bupvhlybei .gt_spanner_row {
+#qmkgqtwyfo .gt_spanner_row {
   border-bottom-style: hidden;
 }
 
-#bupvhlybei .gt_group_heading {
+#qmkgqtwyfo .gt_group_heading {
   padding-top: 8px;
   padding-bottom: 8px;
   padding-left: 5px;
@@ -802,7 +889,7 @@ Pierce Paul, Laurence Madden
   text-align: left;
 }
 
-#bupvhlybei .gt_empty_group_heading {
+#qmkgqtwyfo .gt_empty_group_heading {
   padding: 0.5px;
   color: #333333;
   background-color: #FFFFFF;
@@ -817,15 +904,15 @@ Pierce Paul, Laurence Madden
   vertical-align: middle;
 }
 
-#bupvhlybei .gt_from_md > :first-child {
+#qmkgqtwyfo .gt_from_md > :first-child {
   margin-top: 0;
 }
 
-#bupvhlybei .gt_from_md > :last-child {
+#qmkgqtwyfo .gt_from_md > :last-child {
   margin-bottom: 0;
 }
 
-#bupvhlybei .gt_row {
+#qmkgqtwyfo .gt_row {
   padding-top: 10px;
   padding-bottom: 10px;
   padding-left: 5px;
@@ -844,7 +931,7 @@ Pierce Paul, Laurence Madden
   overflow-x: hidden;
 }
 
-#bupvhlybei .gt_stub {
+#qmkgqtwyfo .gt_stub {
   color: #333333;
   background-color: #FFFFFF;
   font-size: 100%;
@@ -857,7 +944,7 @@ Pierce Paul, Laurence Madden
   padding-right: 5px;
 }
 
-#bupvhlybei .gt_stub_row_group {
+#qmkgqtwyfo .gt_stub_row_group {
   color: #333333;
   background-color: #FFFFFF;
   font-size: 100%;
@@ -871,15 +958,15 @@ Pierce Paul, Laurence Madden
   vertical-align: top;
 }
 
-#bupvhlybei .gt_row_group_first td {
+#qmkgqtwyfo .gt_row_group_first td {
   border-top-width: 2px;
 }
 
-#bupvhlybei .gt_row_group_first th {
+#qmkgqtwyfo .gt_row_group_first th {
   border-top-width: 2px;
 }
 
-#bupvhlybei .gt_summary_row {
+#qmkgqtwyfo .gt_summary_row {
   color: #333333;
   background-color: #FFFFFF;
   text-transform: inherit;
@@ -889,16 +976,16 @@ Pierce Paul, Laurence Madden
   padding-right: 5px;
 }
 
-#bupvhlybei .gt_first_summary_row {
+#qmkgqtwyfo .gt_first_summary_row {
   border-top-style: solid;
   border-top-color: #D3D3D3;
 }
 
-#bupvhlybei .gt_first_summary_row.thick {
+#qmkgqtwyfo .gt_first_summary_row.thick {
   border-top-width: 2px;
 }
 
-#bupvhlybei .gt_last_summary_row {
+#qmkgqtwyfo .gt_last_summary_row {
   padding-top: 8px;
   padding-bottom: 8px;
   padding-left: 5px;
@@ -908,7 +995,7 @@ Pierce Paul, Laurence Madden
   border-bottom-color: #D3D3D3;
 }
 
-#bupvhlybei .gt_grand_summary_row {
+#qmkgqtwyfo .gt_grand_summary_row {
   color: #333333;
   background-color: #FFFFFF;
   text-transform: inherit;
@@ -918,7 +1005,7 @@ Pierce Paul, Laurence Madden
   padding-right: 5px;
 }
 
-#bupvhlybei .gt_first_grand_summary_row {
+#qmkgqtwyfo .gt_first_grand_summary_row {
   padding-top: 8px;
   padding-bottom: 8px;
   padding-left: 5px;
@@ -928,7 +1015,7 @@ Pierce Paul, Laurence Madden
   border-top-color: #D3D3D3;
 }
 
-#bupvhlybei .gt_last_grand_summary_row_top {
+#qmkgqtwyfo .gt_last_grand_summary_row_top {
   padding-top: 8px;
   padding-bottom: 8px;
   padding-left: 5px;
@@ -938,11 +1025,11 @@ Pierce Paul, Laurence Madden
   border-bottom-color: #D3D3D3;
 }
 
-#bupvhlybei .gt_striped {
+#qmkgqtwyfo .gt_striped {
   background-color: rgba(128, 128, 128, 0.05);
 }
 
-#bupvhlybei .gt_table_body {
+#qmkgqtwyfo .gt_table_body {
   border-top-style: solid;
   border-top-width: 2px;
   border-top-color: #D3D3D3;
@@ -951,7 +1038,7 @@ Pierce Paul, Laurence Madden
   border-bottom-color: #D3D3D3;
 }
 
-#bupvhlybei .gt_footnotes {
+#qmkgqtwyfo .gt_footnotes {
   color: #333333;
   background-color: #FFFFFF;
   border-bottom-style: none;
@@ -965,7 +1052,7 @@ Pierce Paul, Laurence Madden
   border-right-color: #D3D3D3;
 }
 
-#bupvhlybei .gt_footnote {
+#qmkgqtwyfo .gt_footnote {
   margin: 0px;
   font-size: 90%;
   padding-top: 4px;
@@ -974,7 +1061,7 @@ Pierce Paul, Laurence Madden
   padding-right: 5px;
 }
 
-#bupvhlybei .gt_sourcenotes {
+#qmkgqtwyfo .gt_sourcenotes {
   color: #333333;
   background-color: #FFFFFF;
   border-bottom-style: none;
@@ -988,7 +1075,7 @@ Pierce Paul, Laurence Madden
   border-right-color: #D3D3D3;
 }
 
-#bupvhlybei .gt_sourcenote {
+#qmkgqtwyfo .gt_sourcenote {
   font-size: 13px;
   padding-top: 4px;
   padding-bottom: 4px;
@@ -996,72 +1083,72 @@ Pierce Paul, Laurence Madden
   padding-right: 5px;
 }
 
-#bupvhlybei .gt_left {
+#qmkgqtwyfo .gt_left {
   text-align: left;
 }
 
-#bupvhlybei .gt_center {
+#qmkgqtwyfo .gt_center {
   text-align: center;
 }
 
-#bupvhlybei .gt_right {
+#qmkgqtwyfo .gt_right {
   text-align: right;
   font-variant-numeric: tabular-nums;
 }
 
-#bupvhlybei .gt_font_normal {
+#qmkgqtwyfo .gt_font_normal {
   font-weight: normal;
 }
 
-#bupvhlybei .gt_font_bold {
+#qmkgqtwyfo .gt_font_bold {
   font-weight: bold;
 }
 
-#bupvhlybei .gt_font_italic {
+#qmkgqtwyfo .gt_font_italic {
   font-style: italic;
 }
 
-#bupvhlybei .gt_super {
+#qmkgqtwyfo .gt_super {
   font-size: 65%;
 }
 
-#bupvhlybei .gt_footnote_marks {
+#qmkgqtwyfo .gt_footnote_marks {
   font-size: 75%;
   vertical-align: 0.4em;
   position: initial;
 }
 
-#bupvhlybei .gt_asterisk {
+#qmkgqtwyfo .gt_asterisk {
   font-size: 100%;
   vertical-align: 0;
 }
 
-#bupvhlybei .gt_indent_1 {
+#qmkgqtwyfo .gt_indent_1 {
   text-indent: 5px;
 }
 
-#bupvhlybei .gt_indent_2 {
+#qmkgqtwyfo .gt_indent_2 {
   text-indent: 10px;
 }
 
-#bupvhlybei .gt_indent_3 {
+#qmkgqtwyfo .gt_indent_3 {
   text-indent: 15px;
 }
 
-#bupvhlybei .gt_indent_4 {
+#qmkgqtwyfo .gt_indent_4 {
   text-indent: 20px;
 }
 
-#bupvhlybei .gt_indent_5 {
+#qmkgqtwyfo .gt_indent_5 {
   text-indent: 25px;
 }
 
-#bupvhlybei .katex-display {
+#qmkgqtwyfo .katex-display {
   display: inline-flex !important;
   margin-bottom: 0.75em !important;
 }
 
-#bupvhlybei div.Reactable > div.rt-table > div.rt-thead > div.rt-tr.rt-tr-group-header > div.rt-th-group:after {
+#qmkgqtwyfo div.Reactable > div.rt-table > div.rt-thead > div.rt-tr.rt-tr-group-header > div.rt-th-group:after {
   height: 0px !important;
 }
 </style>
@@ -1128,8 +1215,9 @@ Pierce Paul, Laurence Madden
 </div>
 </div>
 <aside class="notes">
-<p>There are two Simulated dataset slides.<br>
-The first presents the characteristics of the simulated dataset in bullet form. The 2nd presents the characteristics in a Table.</p>
+<p>There are two <code>Simulated Dataset</code> slides.</p>
+<p>The first (on the previous slide) presents the characteristics of the simulated dataset in bullet form.</p>
+<p>The second (this slide) presents the characteristics in a Table.</p>
 <style type="text/css">
         span.MJX_Assistive_MathML {
           position:absolute!important;
@@ -1158,12 +1246,18 @@ The first presents the characteristics of the simulated dataset in bullet form. 
 </ul>
 <div class="cell">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="" aria-hidden="true" tabindex="-1"></a>mod_500 <span class="ot">&lt;-</span> <span class="fu">glm</span>(y <span class="sc">~</span> x1 <span class="sc">+</span> x2 <span class="sc">+</span> x3, <span class="at">data =</span> dat_500, <span class="at">family =</span> <span class="fu">binomial</span>())</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<ul>
+<li><span class="math inline">\(N = 1,000\)</span></li>
+</ul>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="" aria-hidden="true" tabindex="-1"></a>mod_1000 <span class="ot">&lt;-</span> <span class="fu">glm</span>(y <span class="sc">~</span> x1 <span class="sc">+</span> x2 <span class="sc">+</span> x3, <span class="at">data =</span> dat_1000, <span class="at">family =</span> <span class="fu">binomial</span>())</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div></li>
 </ul>
 <aside class="notes">
 <p>Just showing the code for the model fitting. It’s a simple model.</p>
-<p>QUESTION THAT MAY ARISE: Why not repeatedly resample from the population of 200,000? That could be done, but if we were examining instability by comparing estimated risks to true risks for each individual, where true risk was represented by this population.</p>
-<p>However, in practice when developing a model researchers will not know the “true” risk of each individual, and so need to examine instability in a different way, using the development data itself.</p>
+<p>QUESTION THAT MAY ARISE: Why not repeatedly resample from the population of 200,000? That could be done, if we were examining instability by comparing estimated risks to true risks for each individual, where true risk was represented by this population.</p>
+<p>However, in practice when developing a model, the “true” risk of each individual is unknown, and so need to examine instability in a different way, using the development data itself.</p>
 <style type="text/css">
         span.MJX_Assistive_MathML {
           position:absolute!important;
@@ -1176,7 +1270,7 @@ The first presents the characteristics of the simulated dataset in bullet form. 
           display:block!important;
       }</style></aside>
 </section>
-<section id="summaries-of-instability" class="slide level2" data-auto-animate="true">
+<section id="summaries-of-instability" class="slide level2 scrollable" data-auto-animate="true">
 <h2 data-id="quarto-animate-title">Summaries of instability</h2>
 <h4 id="prediction-instability-plot">Prediction instability plot</h4>
 <ul>
@@ -1209,7 +1303,15 @@ The first presents the characteristics of the simulated dataset in bullet form. 
 </div>
 </div>
 <aside class="notes">
-<p>Interpretation: For each individual, we have (i) the estimated risk from the original development model, (ii) the estimated risk from 200 bootstrap models. If there is perfect agreement between the original estimated risk and the bootstrap estimated risks, then the points should all fall on the red line. But, for any given original individual risk estimate, there is a range (scatter of associated bootstrap-estimated risks)! The solid blue lines delineate the boundaries for a 95% smoothed stability interval (region in which central 95% of the bootstrapped risk estimates fall). What does this say about the reliability of individual risk estimates? In the small development sample size setting, it is unlikely that this model will be reliable in the target population. Notice the instability increases with the estimated risk.</p>
+<p>Interpretation: For each individual, we have:</p>
+<ol type="i">
+<li>the estimated risk from the original development model</li>
+<li>the estimated risk from 200 bootstrap models.</li>
+</ol>
+<p>If there is perfect agreement between the original estimated risk and the bootstrap estimated risks, then the points should all fall on the <strong>red line</strong>. But, for any given original individual risk estimate, there is a range (scatter of associated bootstrap-estimated risks)!</p>
+<p>The solid <strong>blue lines</strong> delineate the boundaries for a 95% smoothed stability interval (region in which central 95% of the bootstrapped risk estimates fall).</p>
+<p>What does this say about the reliability of individual risk estimates?</p>
+<p>In the small development sample size setting, it is unlikely that this model will be reliable in the target population. Notice the instability increases with the estimated risk.</p>
 <style type="text/css">
         span.MJX_Assistive_MathML {
           position:absolute!important;
@@ -1237,7 +1339,8 @@ The first presents the characteristics of the simulated dataset in bullet form. 
 </ul>
 
 <aside class="notes">
-<p>As calibration will not be familiar to the majority of the audience, this slide provides a brief description of the concept. We won’t get into the details of constructing a calibration curve here (there is no time), but you can find the details in the Van Calster et al.&nbsp;paper listed at the bottom of the slide, as well as a practical plant pathology example in the Shah et al.&nbsp;paper.</p>
+<p>As calibration will not be familiar to the majority of the audience, this slide provides a brief description of the concept.</p>
+<p>We won’t get into the details of constructing a <strong>calibration curve</strong> (there is no time), but you can find the details in the Van Calster et al.&nbsp;paper listed at the bottom of the slide, as well as a practical plant pathology example in the Shah et al.&nbsp;paper.</p>
 <style type="text/css">
         span.MJX_Assistive_MathML {
           position:absolute!important;
@@ -1290,8 +1393,11 @@ The first presents the characteristics of the simulated dataset in bullet form. 
 </div>
 </div>
 <aside class="notes">
-<p><strong>Red</strong> line: perfect calibration. There is a <strong>black</strong> line, representing the calibration of the fitted model on the development dataset. But as we mentioned, calibration is almost always near-perfect in the development dataset, and so the black line is actually almost indistinguishable from the red line. <strong>Pale blue</strong> lines are the individual bootstrap models calibration curves. The <strong>thicker blue lines</strong> are 95% intervals for the individual bootstrap calibration curves. Instability seen with model development sample size of 100. And has been reduced with the 500 obs sample size.</p>
-<p>Question that may come up: it appears the upper range of estimated risk is higher in the 500 obs sample than in the 1,000 obs sample. That is indeed true with these samples. In the 500 obs sample, the max fitted probability was 0.896. For the 1,000 obs sample it was 0.804.</p>
+<p><strong>Red</strong> line: perfect calibration.</p>
+<p><strong>Black</strong> line: represents the calibration of the fitted model on the development dataset. But as we mentioned, calibration is almost always near-perfect in the development dataset, and so the black line is actually almost indistinguishable from the red line.</p>
+<p><strong>Pale blue</strong> lines: the calibration curves for the individual bootstrap models.</p>
+<p><strong>Thicker blue</strong> lines: the 95% intervals for the individual bootstrap calibration curves. Instability seen with model development sample size of 100. And has been reduced with the larger sample sizes.</p>
+<p><strong>Question that may come up</strong>: it appears the upper range of estimated risk is higher in the 500 obs sample than in the 1,000 obs sample. That is indeed true with these samples. In the 500 obs sample, the max fitted probability was 0.896. For the 1,000 obs sample it was 0.804.</p>
 <style type="text/css">
         span.MJX_Assistive_MathML {
           position:absolute!important;
@@ -1314,23 +1420,23 @@ The first presents the characteristics of the simulated dataset in bullet form. 
 <div class="fragment">
 <div class="cell">
 <div class="cell-output-display">
-<div id="subulgspej" style="padding-left:0px;padding-right:0px;padding-top:10px;padding-bottom:10px;overflow-x:auto;overflow-y:auto;width:auto;height:auto;">
-<style>#subulgspej table {
+<div id="pqcgnavmte" style="padding-left:0px;padding-right:0px;padding-top:10px;padding-bottom:10px;overflow-x:auto;overflow-y:auto;width:auto;height:auto;">
+<style>#pqcgnavmte table {
   font-family: system-ui, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
-#subulgspej thead, #subulgspej tbody, #subulgspej tfoot, #subulgspej tr, #subulgspej td, #subulgspej th {
+#pqcgnavmte thead, #pqcgnavmte tbody, #pqcgnavmte tfoot, #pqcgnavmte tr, #pqcgnavmte td, #pqcgnavmte th {
   border-style: none;
 }
 
-#subulgspej p {
+#pqcgnavmte p {
   margin: 0;
   padding: 0;
 }
 
-#subulgspej .gt_table {
+#pqcgnavmte .gt_table {
   display: table;
   border-collapse: collapse;
   line-height: normal;
@@ -1356,12 +1462,12 @@ The first presents the characteristics of the simulated dataset in bullet form. 
   border-left-color: #D3D3D3;
 }
 
-#subulgspej .gt_caption {
+#pqcgnavmte .gt_caption {
   padding-top: 4px;
   padding-bottom: 4px;
 }
 
-#subulgspej .gt_title {
+#pqcgnavmte .gt_title {
   color: #333333;
   font-size: 24px;
   font-weight: initial;
@@ -1373,7 +1479,7 @@ The first presents the characteristics of the simulated dataset in bullet form. 
   border-bottom-width: 0;
 }
 
-#subulgspej .gt_subtitle {
+#pqcgnavmte .gt_subtitle {
   color: #333333;
   font-size: 15px;
   font-weight: initial;
@@ -1385,7 +1491,7 @@ The first presents the characteristics of the simulated dataset in bullet form. 
   border-top-width: 0;
 }
 
-#subulgspej .gt_heading {
+#pqcgnavmte .gt_heading {
   background-color: #FFFFFF;
   text-align: center;
   border-bottom-color: #FFFFFF;
@@ -1397,13 +1503,13 @@ The first presents the characteristics of the simulated dataset in bullet form. 
   border-right-color: #D3D3D3;
 }
 
-#subulgspej .gt_bottom_border {
+#pqcgnavmte .gt_bottom_border {
   border-bottom-style: solid;
   border-bottom-width: 2px;
   border-bottom-color: #08519C;
 }
 
-#subulgspej .gt_col_headings {
+#pqcgnavmte .gt_col_headings {
   border-top-style: solid;
   border-top-width: 2px;
   border-top-color: #D3D3D3;
@@ -1418,7 +1524,7 @@ The first presents the characteristics of the simulated dataset in bullet form. 
   border-right-color: #D3D3D3;
 }
 
-#subulgspej .gt_col_heading {
+#pqcgnavmte .gt_col_heading {
   color: #333333;
   background-color: #FFFFFF;
   font-size: 18px;
@@ -1438,7 +1544,7 @@ The first presents the characteristics of the simulated dataset in bullet form. 
   overflow-x: hidden;
 }
 
-#subulgspej .gt_column_spanner_outer {
+#pqcgnavmte .gt_column_spanner_outer {
   color: #333333;
   background-color: #FFFFFF;
   font-size: 18px;
@@ -1450,15 +1556,15 @@ The first presents the characteristics of the simulated dataset in bullet form. 
   padding-right: 4px;
 }
 
-#subulgspej .gt_column_spanner_outer:first-child {
+#pqcgnavmte .gt_column_spanner_outer:first-child {
   padding-left: 0;
 }
 
-#subulgspej .gt_column_spanner_outer:last-child {
+#pqcgnavmte .gt_column_spanner_outer:last-child {
   padding-right: 0;
 }
 
-#subulgspej .gt_column_spanner {
+#pqcgnavmte .gt_column_spanner {
   border-bottom-style: solid;
   border-bottom-width: 2px;
   border-bottom-color: #D3D3D3;
@@ -1470,11 +1576,11 @@ The first presents the characteristics of the simulated dataset in bullet form. 
   width: 100%;
 }
 
-#subulgspej .gt_spanner_row {
+#pqcgnavmte .gt_spanner_row {
   border-bottom-style: hidden;
 }
 
-#subulgspej .gt_group_heading {
+#pqcgnavmte .gt_group_heading {
   padding-top: 8px;
   padding-bottom: 8px;
   padding-left: 5px;
@@ -1500,7 +1606,7 @@ The first presents the characteristics of the simulated dataset in bullet form. 
   text-align: left;
 }
 
-#subulgspej .gt_empty_group_heading {
+#pqcgnavmte .gt_empty_group_heading {
   padding: 0.5px;
   color: #333333;
   background-color: #FFFFFF;
@@ -1515,15 +1621,15 @@ The first presents the characteristics of the simulated dataset in bullet form. 
   vertical-align: middle;
 }
 
-#subulgspej .gt_from_md > :first-child {
+#pqcgnavmte .gt_from_md > :first-child {
   margin-top: 0;
 }
 
-#subulgspej .gt_from_md > :last-child {
+#pqcgnavmte .gt_from_md > :last-child {
   margin-bottom: 0;
 }
 
-#subulgspej .gt_row {
+#pqcgnavmte .gt_row {
   padding-top: 10px;
   padding-bottom: 10px;
   padding-left: 5px;
@@ -1542,7 +1648,7 @@ The first presents the characteristics of the simulated dataset in bullet form. 
   overflow-x: hidden;
 }
 
-#subulgspej .gt_stub {
+#pqcgnavmte .gt_stub {
   color: #333333;
   background-color: #FFFFFF;
   font-size: 100%;
@@ -1555,7 +1661,7 @@ The first presents the characteristics of the simulated dataset in bullet form. 
   padding-right: 5px;
 }
 
-#subulgspej .gt_stub_row_group {
+#pqcgnavmte .gt_stub_row_group {
   color: #333333;
   background-color: #FFFFFF;
   font-size: 100%;
@@ -1569,15 +1675,15 @@ The first presents the characteristics of the simulated dataset in bullet form. 
   vertical-align: top;
 }
 
-#subulgspej .gt_row_group_first td {
+#pqcgnavmte .gt_row_group_first td {
   border-top-width: 2px;
 }
 
-#subulgspej .gt_row_group_first th {
+#pqcgnavmte .gt_row_group_first th {
   border-top-width: 2px;
 }
 
-#subulgspej .gt_summary_row {
+#pqcgnavmte .gt_summary_row {
   color: #333333;
   background-color: #FFFFFF;
   text-transform: inherit;
@@ -1587,16 +1693,16 @@ The first presents the characteristics of the simulated dataset in bullet form. 
   padding-right: 5px;
 }
 
-#subulgspej .gt_first_summary_row {
+#pqcgnavmte .gt_first_summary_row {
   border-top-style: solid;
   border-top-color: #D3D3D3;
 }
 
-#subulgspej .gt_first_summary_row.thick {
+#pqcgnavmte .gt_first_summary_row.thick {
   border-top-width: 2px;
 }
 
-#subulgspej .gt_last_summary_row {
+#pqcgnavmte .gt_last_summary_row {
   padding-top: 8px;
   padding-bottom: 8px;
   padding-left: 5px;
@@ -1606,7 +1712,7 @@ The first presents the characteristics of the simulated dataset in bullet form. 
   border-bottom-color: #D3D3D3;
 }
 
-#subulgspej .gt_grand_summary_row {
+#pqcgnavmte .gt_grand_summary_row {
   color: #333333;
   background-color: #FFFFFF;
   text-transform: inherit;
@@ -1616,7 +1722,7 @@ The first presents the characteristics of the simulated dataset in bullet form. 
   padding-right: 5px;
 }
 
-#subulgspej .gt_first_grand_summary_row {
+#pqcgnavmte .gt_first_grand_summary_row {
   padding-top: 8px;
   padding-bottom: 8px;
   padding-left: 5px;
@@ -1626,7 +1732,7 @@ The first presents the characteristics of the simulated dataset in bullet form. 
   border-top-color: #D3D3D3;
 }
 
-#subulgspej .gt_last_grand_summary_row_top {
+#pqcgnavmte .gt_last_grand_summary_row_top {
   padding-top: 8px;
   padding-bottom: 8px;
   padding-left: 5px;
@@ -1636,11 +1742,11 @@ The first presents the characteristics of the simulated dataset in bullet form. 
   border-bottom-color: #D3D3D3;
 }
 
-#subulgspej .gt_striped {
+#pqcgnavmte .gt_striped {
   background-color: rgba(128, 128, 128, 0.05);
 }
 
-#subulgspej .gt_table_body {
+#pqcgnavmte .gt_table_body {
   border-top-style: solid;
   border-top-width: 2px;
   border-top-color: #D3D3D3;
@@ -1649,7 +1755,7 @@ The first presents the characteristics of the simulated dataset in bullet form. 
   border-bottom-color: #D3D3D3;
 }
 
-#subulgspej .gt_footnotes {
+#pqcgnavmte .gt_footnotes {
   color: #333333;
   background-color: #FFFFFF;
   border-bottom-style: none;
@@ -1663,7 +1769,7 @@ The first presents the characteristics of the simulated dataset in bullet form. 
   border-right-color: #D3D3D3;
 }
 
-#subulgspej .gt_footnote {
+#pqcgnavmte .gt_footnote {
   margin: 0px;
   font-size: 90%;
   padding-top: 4px;
@@ -1672,7 +1778,7 @@ The first presents the characteristics of the simulated dataset in bullet form. 
   padding-right: 5px;
 }
 
-#subulgspej .gt_sourcenotes {
+#pqcgnavmte .gt_sourcenotes {
   color: #333333;
   background-color: #FFFFFF;
   border-bottom-style: none;
@@ -1686,7 +1792,7 @@ The first presents the characteristics of the simulated dataset in bullet form. 
   border-right-color: #D3D3D3;
 }
 
-#subulgspej .gt_sourcenote {
+#pqcgnavmte .gt_sourcenote {
   font-size: 13px;
   padding-top: 4px;
   padding-bottom: 4px;
@@ -1694,72 +1800,72 @@ The first presents the characteristics of the simulated dataset in bullet form. 
   padding-right: 5px;
 }
 
-#subulgspej .gt_left {
+#pqcgnavmte .gt_left {
   text-align: left;
 }
 
-#subulgspej .gt_center {
+#pqcgnavmte .gt_center {
   text-align: center;
 }
 
-#subulgspej .gt_right {
+#pqcgnavmte .gt_right {
   text-align: right;
   font-variant-numeric: tabular-nums;
 }
 
-#subulgspej .gt_font_normal {
+#pqcgnavmte .gt_font_normal {
   font-weight: normal;
 }
 
-#subulgspej .gt_font_bold {
+#pqcgnavmte .gt_font_bold {
   font-weight: bold;
 }
 
-#subulgspej .gt_font_italic {
+#pqcgnavmte .gt_font_italic {
   font-style: italic;
 }
 
-#subulgspej .gt_super {
+#pqcgnavmte .gt_super {
   font-size: 65%;
 }
 
-#subulgspej .gt_footnote_marks {
+#pqcgnavmte .gt_footnote_marks {
   font-size: 75%;
   vertical-align: 0.4em;
   position: initial;
 }
 
-#subulgspej .gt_asterisk {
+#pqcgnavmte .gt_asterisk {
   font-size: 100%;
   vertical-align: 0;
 }
 
-#subulgspej .gt_indent_1 {
+#pqcgnavmte .gt_indent_1 {
   text-indent: 5px;
 }
 
-#subulgspej .gt_indent_2 {
+#pqcgnavmte .gt_indent_2 {
   text-indent: 10px;
 }
 
-#subulgspej .gt_indent_3 {
+#pqcgnavmte .gt_indent_3 {
   text-indent: 15px;
 }
 
-#subulgspej .gt_indent_4 {
+#pqcgnavmte .gt_indent_4 {
   text-indent: 20px;
 }
 
-#subulgspej .gt_indent_5 {
+#pqcgnavmte .gt_indent_5 {
   text-indent: 25px;
 }
 
-#subulgspej .katex-display {
+#pqcgnavmte .katex-display {
   display: inline-flex !important;
   margin-bottom: 0.75em !important;
 }
 
-#subulgspej div.Reactable > div.rt-table > div.rt-thead > div.rt-tr.rt-tr-group-header > div.rt-th-group:after {
+#pqcgnavmte div.Reactable > div.rt-table > div.rt-thead > div.rt-tr.rt-tr-group-header > div.rt-th-group:after {
   height: 0px !important;
 }
 </style>
@@ -1808,8 +1914,9 @@ The first presents the characteristics of the simulated dataset in bullet form. 
 </ul>
 </div>
 <aside class="notes">
-<p>Recall: MAPE = mean absolute difference between the bootstrap model predictions and the original model prediction.</p>
-<p>Assumption: Estimating what the error would be assuming the bootstrap models represent the truth (which is of course unknown). Caveat: Average MAPE, though useful as a <strong>single summary</strong>, may mask instability in particular regions at the individual level – hence why it should be used in conjunction with a MAPE instability plot.</p>
+<p><strong>Recall:</strong> MAPE = mean absolute difference between the bootstrap model predictions and the original model prediction.</p>
+<p><strong>Assumption:</strong> Estimating what the error would be assuming we knew the truth.</p>
+<p><strong>Caveat:</strong> Average MAPE, though useful as a <strong>single summary</strong>, may mask instability in particular regions at the individual level – hence why it should be used in conjunction with a MAPE instability plot.</p>
 <style type="text/css">
         span.MJX_Assistive_MathML {
           position:absolute!important;
@@ -1855,7 +1962,9 @@ The first presents the characteristics of the simulated dataset in bullet form. 
 </div>
 </div>
 <aside class="notes">
-<p>MAPE plot: reveals the full range of the MAPE values. Helps you identify where instability may be of the most concern with the predicted values. In our example, we see that MAPE increases as estimated risk increases; also, the variability, especially around p = 0.5. So, there is higher model instability in estimating higher risks. And this is true regardless of the sample size (100 or 500), though the instability is less with the 500 obs sample size.</p>
+<p><strong>MAPE plot:</strong> reveals the full range of the MAPE values. Helps you identify where instability may be of the most concern with the predicted values.</p>
+<p>In our example, we see that <strong>MAPE</strong> increases as estimated risk increases; also, the <strong>variability</strong> increases, especially around p = 0.5.</p>
+<p>There is higher model instability in estimating higher risks. And this is true regardless of the sample size (100, 500 or 1,000), though the instability is less with the higher model development sample sizes.</p>
 <style type="text/css">
         span.MJX_Assistive_MathML {
           position:absolute!important;
@@ -1890,9 +1999,9 @@ The first presents the characteristics of the simulated dataset in bullet form. 
 <aside class="notes">
 <p>We have only considered model development and <strong>internal validation</strong> of simple logistic regression models.</p>
 <p>Although we have focused on logistic regression, the concepts apply to other algorithms, e.g., random forests, SVMs and so on.</p>
-<p>We list some other targets (beyond mean or individual predicted probabilities) for stability assessment, without getting into the details here, which would take too much time.</p>
+<p>We simply list some other targets (utility, net benefit assurance probabilities) - beyond mean or individual predicted probabilities - for stability assessment. We don’t get into their details here, which would take too much time.</p>
 <p>If the end goal is to produce a classification (e.g., assigning a field to a low or high risk group), then may want to look at a classification instability plot.</p>
-<p>The same concerns extend to the validation of a model in an external dataset. - How large should an **external validation*]{.highlight}** dataset be?</p>
+<p>The same concerns extend to the validation of a model in an external dataset. How large should an <strong>external validation</strong> dataset be?</p>
 <style type="text/css">
         span.MJX_Assistive_MathML {
           position:absolute!important;

@@ -15,7 +15,7 @@ title-slide-attributes:
 #     affiliation: The Ohio State University
 authors:
   - name: "Erick De Wolf, Denis Shah"
-    affiliation: "Kansas State University"
+    affiliation: "Kansas State University" 
   - name: "Pierce Paul, Laurence Madden"
     affiliation: "The Ohio State University"    
 format:
@@ -56,7 +56,9 @@ editor_options:
   - Explainable (to stakeholders)
 
 ::: notes
-We focus on LR models, because they are common, useful models in *pde*. We assume that the audience has some familiarity with fitting and interpreting LR models, and so will not get into their specifics here..
+We focus on LR models, because they are common, useful models in *pde*. 
+
+We assume that the audience has some familiarity with fitting and interpreting LR models, and so will not get into their specifics here.
 :::
 
 ## Factors impacting model development
@@ -80,13 +82,13 @@ We focus on LR models, because they are common, useful models in *pde*. We assum
 
 - The model-building strategy
 
-  - Variable selection, variable representation, interactions, penalization etc...
+  - Variable selection, variable representation, interactions, penalization etc.
 :::
 
 ::: notes
-Imbalance: we are in most instances trying to predict a rare outcome. These factors all impact model performance, such as the model's accuracy.
+**Imbalance:** we are in most instances trying to predict a rare outcome. These factors all impact model performance, such as the model's accuracy.
 
-What we mean by proxy: operational proxy for the true component causes. The true component (LWD) may be difficult to measure or obtain, so we use an operational proxy (RH) which is more readily available and can be used from an operational standpoint.
+**What we mean by proxy:** operational proxy for the true component causes. The true component (LWD) may be difficult to measure or obtain, so we use an operational proxy (RH) which is more readily available and can be used from an operational standpoint.
 :::
 
 ## Reliability of predictions
@@ -119,6 +121,11 @@ Predictions may be unreliable if:
 
 Unreliable predictions are indicative of [unstable models]{.highlight}
 
+::: notes
+**The model complexity temptation:** there is the temptation to put as many variables into the model as we have, without thinking of how much data is actually available to estimate the parameters (consider the number of events per predictor parameter). 
+:::
+
+
 ## Model instability
 
 ::: fragment
@@ -128,7 +135,7 @@ Unreliable predictions are indicative of [unstable models]{.highlight}
 :::
 
 :::: fragment
-Leads to instability in ...
+Insufficient sample size leads to instability in ...
 
 <!-- Add some space before the next section header -->
 
@@ -144,7 +151,7 @@ Leads to instability in ...
 ::::
 
 ::: fragment
-- Unstable model specification ⟶ instability in *predicted risk*
+- Unstable *model specification* ⟶ instability in *predicted risk*
 :::
 
 ::: fragment
@@ -152,7 +159,9 @@ Leads to instability in ...
 :::
 
 ::: notes
-In this talk, we'll focus on the **stability** of predictions. Complex models: there is the temptation to put as many variables into the model as we have, without thinking of how much data is actually available to estimate the parameters (consider the number of events per predictor parameter). We have to recognize the limitations of our datasets, which may be too small for reliably estimating a model.
+In this talk, we'll focus on the **stability** of predictions. 
+
+We have to recognize the limitations of our datasets, which may be too small for reliably estimating a model.
 :::
 
 ## Stability of predictions
@@ -165,8 +174,7 @@ In this talk, we'll focus on the **stability** of predictions. Complex models: t
 - [Measurement]{.highlight} of instability
 :::
 
-::: fragment
-Based on Riley, R. D., & Collins, G. S. (2023). Stability of clinical prediction models developed using statistical or machine learning methods.
+::: {style="height: 14.0em;"}
 :::
 
 ::: aside
@@ -176,7 +184,10 @@ Riley, R. D., & Collins, G. S. (2023). Stability of clinical prediction models d
 ::: notes
 The concepts we are presenting are based on the paper by Riley & Collins (2023). The reference is listed at the bottom of the slide.
 
-To formally address the stability of LR models, we need to (i) define what we mean by instability, and (ii) propose how we intend to measure instability.
+To formally address the stability of LR models, we need to:
+
+  (i) **define** what we mean by instability, and 
+  (ii) propose how we intend to **measure** instability.
 :::
 
 ## Levels of instability {auto-animate="true"}
@@ -203,13 +214,15 @@ The definitions of the levels of stability move roughly from the global level (e
 - Do two (or more) models have the same, similar or very different distributions in predicted risk, even when developed on the same sample size drawn from the population?
   - This can start to reveal instability at the individual observation level
 
-<!-- #### How to assess -->
+::: notes
+How to assess (we get deeper into this later in the *Assessing model instability* and *Summaries of instability* sections)
 
-<!-- - Calibration curves of estimated vs observed risk -->
+- **Calibration curves** of estimated vs observed risk
 
-<!-- - Mean absolute prediction error (MAPE) -->
+- **Mean absolute prediction error** (MAPE)
 
-<!--   - mean of the absolute difference between the estimated risks (from the fitted model) and the true risks (from the assumed data generating model) -->
+  - mean of the absolute difference between the estimated risks (from the fitted model) and the true risks (from the assumed data generating model)
+:::
 
 ::: aside
 Riley, R. D., & Collins, G. S. (2023). Stability of clinical prediction models developed using statistical or machine learning methods. [Biometrical Journal, 65, 2200302.](https://doi.org/10.1002/bimj.202200302)
@@ -223,19 +236,22 @@ Van Calster et al. (2016). A calibration hierarchy for risk models was defined: 
 
 - Subgroups defined by a particular covariate (it does not have to be part of the model)
 
-  - E.g., the subset of observations for which the predictor mean(RH) \< 70%
+  - E.g., the subset of observations for which the condition `mean(RH) < 70%` holds for the predictor `mean(RH)`
+  
+::: notes
+How to assess:
 
-<!-- ##### How to assess: -->
+- Distribution of the mean predicted probabilities in this subset of observations for models fit to different (bootstrap) versions of the development dataset
 
-<!-- - Distribution of the mean predicted probabilities in this subset of observations for models fit to different (bootstrap) versions of the development dataset -->
+- Is there large variability in the predictions?
 
-<!-- - Is there large variability in the predictions? -->
-
-<!--   - Any two models $M_{b1}$ and $M_{b2}$ may differ considerably in their estimated risks for the subgroup ⟹ instability -->
+  - Any two models $M_{b1}$ and $M_{b2}$ may differ considerably in their estimated risks for the subgroup ⟹ instability
+:::
 
 ::: aside
 Riley, R. D., & Collins, G. S. (2023). Stability of clinical prediction models developed using statistical or machine learning methods. [Biometrical Journal, 65, 2200302.](https://doi.org/10.1002/bimj.202200302)
 :::
+
 
 <!-- Option 1 for this slide -->
 
@@ -249,13 +265,15 @@ Riley, R. D., & Collins, G. S. (2023). Stability of clinical prediction models d
 
   - If the estimates vary a lot ⟹ instability at the *individual* level
 
-<!-- ##### How to assess: -->
+::: notes
+How to assess:  (more details in the *Assessing model instability* and *Summaries of instability* sections)
 
-<!-- - Vary the input development dataset (keep sample size the same) -->
+- Vary the input development dataset (keep sample size the same)
 
-<!--   - Fit the same model to each dataset -->
+  - Fit the same model to each dataset
 
-<!-- - What do the different models predict for a given *individual* observation? -->
+- What do the different models predict for a given *individual* observation?
+:::
 
 ::: aside
 Riley, R. D., & Collins, G. S. (2023). Stability of clinical prediction models developed using statistical or machine learning methods. [Biometrical Journal, 65, 2200302.](https://doi.org/10.1002/bimj.202200302)
@@ -340,7 +358,13 @@ Riley, R. D., & Collins, G. S. (2023). Stability of clinical prediction models d
 - Examine instability in a different way: via [bootstrapping]{.highlight} of the development data
 
 ::: notes
-When developing a model, we do not know the true risk of an individual. Therefore, we need to examine instability in a different way, using the development data itself. The method for doing that is based on the bootstrap. Why the bootstrap? Because it is a technique built to examine sampling variability, so fits perfectly into how variability in the development dataset affects model development and performance.
+When developing a model, we do not know the true risk of an individual. 
+
+Therefore, we need to examine instability in a different way, using the development data itself. 
+
+The method for doing that is based on the bootstrap. 
+
+Why the bootstrap? Because it is a technique built to examine sampling variability, so fits perfectly into how variability in the development dataset affects model development and performance.
 :::
 
 ## Bootstrap assessment of instability {auto-animate="true"}
@@ -362,10 +386,22 @@ When developing a model, we do not know the true risk of an individual. Therefor
 7.  Store the $B$ predictions, as well as the original prediction for each individual $i$
 
 ::: notes
-May want to skip this slide, instead of going through it; or just point out that it is a simple algorithm without going over the details. The point is, it is a relatively simple algorithm. M_o means the model (M) fit on the original (o) development dataset.
+May want to skip this slide, instead of going through it; or just point out that it is a simple algorithm without going over the details. 
+
+The point is, it is a relatively simple algorithm. 
+
+$M_o$ means the model (M) fit on the original (o) development dataset.
 :::
 
 # Illustration of instability
+
+::: notes
+We'll use a simulated dataset to illustrate instability in model development?
+
+Why a simulated dataset? Because we can use this as a `ground truth` and specify the population structure.
+
+The structure will be described in the next slide.
+:::
 
 ## Simulated dataset {auto-animate="true"}
 
@@ -381,7 +417,9 @@ May want to skip this slide, instead of going through it; or just point out that
 - Draw two random ([model development samples]{.highlight}) of 100 and 500 observations from the population
 
 ::: notes
-x1's coefficient is twice x2's, so x1 contributes 4x the *variance* of x2 (since variance scales with beta\^2). x3 is unrelated to the outcome.
+x1's coefficient is twice x2's, so x1 contributes 4x the *variance* of x2 (since variance scales with beta\^2). 
+
+x3 is unrelated to the outcome.
 :::
 
 ## Simulated dataset {auto-animate="true"}
@@ -510,8 +548,11 @@ pop_gt
 ```
 
 ::: notes
-There are two Simulated dataset slides.\
-The first presents the characteristics of the simulated dataset in bullet form. The 2nd presents the characteristics in a Table.
+There are two `Simulated Dataset` slides.
+
+The first (on the previous slide) presents the characteristics of the simulated dataset in bullet form. 
+
+The second (this slide) presents the characteristics in a Table.
 :::
 
 ## Build the model
@@ -537,13 +578,22 @@ The first presents the characteristics of the simulated dataset in bullet form. 
   #| code-line-numbers: false
   mod_500 <- glm(y ~ x1 + x2 + x3, data = dat_500, family = binomial())
   ```
+  
+  - $N = 1,000$
+
+  ```{r}
+  #| echo: true
+  #| eval: false
+  #| code-line-numbers: false
+  mod_1000 <- glm(y ~ x1 + x2 + x3, data = dat_1000, family = binomial())
+  ```
 
 ::: notes
 Just showing the code for the model fitting. It's a simple model.
 
-QUESTION THAT MAY ARISE: Why not repeatedly resample from the population of 200,000? That could be done, but if we were examining instability by comparing estimated risks to true risks for each individual, where true risk was represented by this population.
+QUESTION THAT MAY ARISE: Why not repeatedly resample from the population of 200,000? That could be done, if we were examining instability by comparing estimated risks to true risks for each individual, where true risk was represented by this population.
 
-However, in practice when developing a model researchers will not know the “true” risk of each individual, and so need to examine instability in a different way, using the development data itself.
+However, in practice when developing a model, the “true” risk of each individual is unknown, and so need to examine instability in a different way, using the development data itself.
 :::
 
 ## Summaries of instability {auto-animate="true"}
@@ -562,11 +612,23 @@ However, in practice when developing a model researchers will not know the “tr
 ![](images/prediction_instability_500.png){width="60%" fig-align="center"}
 
 ### 1,000 obs
+
 ![](images/prediction_instability_1000.png){width="60%" fig-align="center"}
 :::
 
 ::: notes
-Interpretation: For each individual, we have (i) the estimated risk from the original development model, (ii) the estimated risk from 200 bootstrap models. If there is perfect agreement between the original estimated risk and the bootstrap estimated risks, then the points should all fall on the red line. But, for any given original individual risk estimate, there is a range (scatter of associated bootstrap-estimated risks)! The solid blue lines delineate the boundaries for a 95% smoothed stability interval (region in which central 95% of the bootstrapped risk estimates fall). What does this say about the reliability of individual risk estimates? In the small development sample size setting, it is unlikely that this model will be reliable in the target population. Notice the instability increases with the estimated risk.
+Interpretation: For each individual, we have:
+
+  (i) the estimated risk from the original development model
+  (ii) the estimated risk from 200 bootstrap models. 
+  
+If there is perfect agreement between the original estimated risk and the bootstrap estimated risks, then the points should all fall on the **red line**. But, for any given original individual risk estimate, there is a range (scatter of associated bootstrap-estimated risks)! 
+
+The solid **blue lines** delineate the boundaries for a 95% smoothed stability interval (region in which central 95% of the bootstrapped risk estimates fall). 
+
+What does this say about the reliability of individual risk estimates? 
+
+In the small development sample size setting, it is unlikely that this model will be reliable in the target population. Notice the instability increases with the estimated risk.
 :::
 
 ## Summaries of instability {auto-animate="true"}
@@ -588,7 +650,9 @@ Shah et al. (2025). Safer and Smarter: Leveraging interpretation-guided modeling
 :::
 
 ::: notes
-As calibration will not be familiar to the majority of the audience, this slide provides a brief description of the concept. We won't get into the details of constructing a calibration curve here (there is no time), but you can find the details in the Van Calster et al. paper listed at the bottom of the slide, as well as a practical plant pathology example in the Shah et al. paper.
+As calibration will not be familiar to the majority of the audience, this slide provides a brief description of the concept. 
+
+We won't get into the details of constructing a **calibration curve** (there is no time), but you can find the details in the Van Calster et al. paper listed at the bottom of the slide, as well as a practical plant pathology example in the Shah et al. paper.
 :::
 
 ## Summaries of instability {auto-animate="true"}
@@ -616,9 +680,15 @@ As calibration will not be familiar to the majority of the audience, this slide 
 :::
 
 ::: notes
-**Red** line: perfect calibration. There is a **black** line, representing the calibration of the fitted model on the development dataset. But as we mentioned, calibration is almost always near-perfect in the development dataset, and so the black line is actually almost indistinguishable from the red line. **Pale blue** lines are the individual bootstrap models calibration curves. The **thicker blue lines** are 95% intervals for the individual bootstrap calibration curves. Instability seen with model development sample size of 100. And has been reduced with the 500 obs sample size.
+**Red** line: perfect calibration. 
 
-Question that may come up: it appears the upper range of estimated risk is higher in the 500 obs sample than in the 1,000 obs sample. That is indeed true with these samples.  In the 500 obs sample, the max fitted probability was 0.896. For the 1,000 obs sample it was 0.804. 
+**Black** line: represents the calibration of the fitted model on the development dataset. But as we mentioned, calibration is almost always near-perfect in the development dataset, and so the black line is actually almost indistinguishable from the red line. 
+
+**Pale blue** lines: the calibration curves for the individual bootstrap models.
+
+**Thicker blue**  lines: the 95% intervals for the individual bootstrap calibration curves. Instability seen with model development sample size of 100. And has been reduced with the larger sample sizes.
+
+**Question that may come up**: it appears the upper range of estimated risk is higher in the 500 obs sample than in the 1,000 obs sample. That is indeed true with these samples. In the 500 obs sample, the max fitted probability was 0.896. For the 1,000 obs sample it was 0.804.
 :::
 
 ## Summaries of instability {auto-animate="true"}
@@ -716,9 +786,11 @@ gt::gtsave(
 :::
 
 ::: notes
-Recall: MAPE = mean absolute difference between the bootstrap model predictions and the original model prediction.
+**Recall:** MAPE = mean absolute difference between the bootstrap model predictions and the original model prediction.
 
-Assumption: Estimating what the error would be assuming the bootstrap models represent the truth (which is of course unknown). Caveat: Average MAPE, though useful as a **single summary**, may mask instability in particular regions at the individual level -- hence why it should be used in conjunction with a MAPE instability plot.
+**Assumption:** Estimating what the error would be assuming we knew the truth. 
+
+**Caveat:** Average MAPE, though useful as a **single summary**, may mask instability in particular regions at the individual level -- hence why it should be used in conjunction with a MAPE instability plot.
 :::
 
 ## Summaries of instability {auto-animate="true"}
@@ -742,7 +814,11 @@ Assumption: Estimating what the error would be assuming the bootstrap models rep
 :::
 
 ::: notes
-MAPE plot: reveals the full range of the MAPE values. Helps you identify where instability may be of the most concern with the predicted values. In our example, we see that MAPE increases as estimated risk increases; also, the variability, especially around p = 0.5. So, there is higher model instability in estimating higher risks. And this is true regardless of the sample size (100 or 500), though the instability is less with the 500 obs sample size.
+**MAPE plot:** reveals the full range of the MAPE values. Helps you identify where instability may be of the most concern with the predicted values. 
+
+In our example, we see that **MAPE** increases as estimated risk increases; also, the **variability** increases, especially around p = 0.5. 
+
+There is higher model instability in estimating higher risks. And this is true regardless of the sample size (100,  500 or 1,000), though the instability is less with the higher model development sample sizes.
 :::
 
 ## Not covered
@@ -775,11 +851,11 @@ We have only considered model development and **internal validation** of simple 
 
 Although we have focused on logistic regression, the concepts apply to other algorithms, e.g., random forests, SVMs and so on.
 
-We list some other targets (beyond mean or individual predicted probabilities) for stability assessment, without getting into the details here, which would take too much time.
+We simply list some other targets (utility, net benefit assurance probabilities) - beyond mean or individual predicted probabilities - for stability assessment. We don't get into their details here, which would take too much time.
 
 If the end goal is to produce a classification (e.g., assigning a field to a low or high risk group), then may want to look at a classification instability plot.
 
-The same concerns extend to the validation of a model in an external dataset. - How large should an \*\*external validation\*\]{.highlight}\*\* dataset be?
+The same concerns extend to the validation of a model in an external dataset. How large should an **external validation** dataset be?
 :::
 
 # Thank You {background-image="images/barcelona.jpg" background-size="cover" background-opacity="0.3"}
