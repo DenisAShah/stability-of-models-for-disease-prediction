@@ -499,7 +499,7 @@ pop_gt <- pop_summary |>
   gt::tab_header(
     title = "Simulated Population Characteristics",
     subtitle = sprintf(
-      "Source population (N = %s) for the N = 100 and N = 500 development samples",
+      "Source population (N = %s) for the N = 100, 500 and 1,000 development samples",
       format(nrow(x), big.mark = ",")
     )
   ) |>
